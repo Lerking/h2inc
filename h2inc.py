@@ -1,5 +1,53 @@
 import os
 
+#Element type definitions. Used in the parse process.
+ELEMENT_TYPE_DEFINE = 1
+ELEMENT_TYPE_INCLUDE = 2
+ELEMENT_TYPE_UNDEF = 3
+ELEMENT_TYPE_IFDEF = 4
+ELEMENT_TYPE_IFNDEF = 5
+ELEMENT_TYPE_IF = 6
+ELEMENT_TYPE_ELSE = 7
+ELEMENT_TYPE_ELIF = 8
+ELEMENT_TYPE_ENDIF = 9
+ELEMENT_TYPE_ERROR = 10
+ELEMENT_TYPE_PRAGMA = 11
+ELEMENT_TYPE_COMMENT_START = 20
+ELEMENT_TYPE_COMMENT_MULTILINE = 21
+ELEMENT_TYPE_COMMENT_END = 22
+
+#Keyword : Element type dictionary, for read C-header line.
+hdr_keywords = {'/*': ELEMENT_TYPE_COMMENT_START,
+                '*': ELEMENT_TYPE_COMMENT_MULTILINE,
+                '*/': ELEMENT_TYPE_COMMENT_END,
+                '#define': ELEMENT_TYPE_DEFINE,
+                '#include': ELEMENT_TYPE_INCLUDE,
+                '#undef': ELEMENT_TYPE_UNDEF,
+                '#ifdef': ELEMENT_TYPE_IFDEF,
+                '#ifndef': ELEMENT_TYPE_IFNDEF,
+                '#if': ELEMENT_TYPE_IF,
+                '#else': ELEMENT_TYPE_ELSE,
+                '#elif': ELEMENT_TYPE_ELIF,
+                '#endif': ELEMENT_TYPE_ENDIF,
+                '#error': ELEMENT_TYPE_ERROR,
+                '#pragma': ELEMENT_TYPE_PRAGMA}        
+
+#Element type : keyword, for assembly include output file.
+inc_keywords = {ELEMENT_TYPE_COMMENT_START: ';',
+                ELEMENT_TYPE_COMMENT_MULTILINE: ';',
+                ELEMENT_TYPE_COMMENT_END: '',
+                ELEMENT_TYPE_DEFINE: '%define',
+                ELEMENT_TYPE_INCLUDE: '%include',
+                ELEMENT_TYPE_UNDEF: '%undef',
+                ELEMENT_TYPE_IFDEF: '%ifdef',
+                ELEMENT_TYPE_IFNDEF: '%ifndef',
+                ELEMENT_TYPE_IF: '%if',
+                ELEMENT_TYPE_ELSE: '%else',
+                ELEMENT_TYPE_ELIF: '%elif',
+                ELEMENT_TYPE_ENDIF: '%endif',
+                ELEMENT_TYPE_ERROR: '%error',
+                ELEMENT_TYPE_PRAGMA: '%pragma'}
+
 class H2INC:
     def __init__(self):
         self.filelist = []
@@ -8,6 +56,8 @@ class H2INC:
         self.destdir = "~/include"
         self.filecnt = 0
         self.foldercnt = 0
+        self.tupline = []
+        self.tupfile = []
         
     def srcfilecnt(self.sourcedir):
         ### Return the number of files, ending with '.h', in sourcedir - including subdirectories ###
@@ -67,7 +117,9 @@ class H2INC:
                 break 
         #print(os.path.basename(data))
         for lines in fh:
-            outfile = outfile+lines
+            #outfile = outfile+lines - Initial phase
+            analyzed_line = analyzer(lines)
+            tupfile.append(analysed_line)
         fh.close()
         outputfile = os.path.splitext(inputfile)[0]+'.inc'
         outputfile = str(outputfile).replace(sourcedir, destdir)
@@ -84,3 +136,11 @@ class H2INC:
         newfile.write(data)
         newfile.close()
         
+    def analyzer(self, ln):
+        word = [w for w in ln.split()]
+            for w in word:
+                if w in hdr_keywords:
+                    v=hdr_keywords[w]
+                       self.tupline.append(v)
+                self.tupline.append(w)
+        return tupline
