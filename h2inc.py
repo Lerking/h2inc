@@ -59,7 +59,7 @@ class H2INC:
         self.tupline = []
         self.tupfile = []
         
-    def srcfilecnt(self.sourcedir):
+    def srcfilecnt(self, sourcedir):
         ### Return the number of files, ending with '.h', in sourcedir - including subdirectories ###
         for folderName, subfolders, files in os.walk(self.sourcedir):
             for file in files:
@@ -71,12 +71,12 @@ class H2INC:
         else:
             return False
                 
-    def srcfoldercnt(self.sourcedir):
+    def srcfoldercnt(self, sourcedir):
         ### Return the number of folders, if it contains '*.h' files, in sourcedir - including subdirectories ###
         for folderName, subfolders, files in os.walk(self.sourcedir):
             if subfolders:
                 for subfolder in subfolders:
-                    sourcedir_foldercnt(subfolder)
+                    self.foldercnt(subfolder)
             tempf = [file for file in files if file.lower().endswith('.h')]
             if tempf:
                 self.foldercnt = self.foldercnt+1
@@ -86,7 +86,7 @@ class H2INC:
         else:
             return False
         
-    def read_file(fn):
+    def read_file(self, fn):
         outfile = ''
         inputfile = fn
         encodings = ['utf-8', 'latin-1', 'windows-1250', 'windows-1252', 'ascii',
@@ -107,7 +107,7 @@ class H2INC:
                     'utf-32-le', 'utf-16', 'utf-16-be', 'utf-16-le', 'utf-7', 'utf-8-sig']
         for e in encodings:
             try:
-                fh = io.open(fn, 'r', encoding=e)
+                fh = open(fn, 'r', encoding=e)
                 fh.readlines()
                 fh.seek(0)
             except UnicodeDecodeError:
@@ -122,10 +122,10 @@ class H2INC:
             tupfile.append(analysed_line)
         fh.close()
         outputfile = os.path.splitext(inputfile)[0]+'.inc'
-        outputfile = str(outputfile).replace(sourcedir, destdir)
-        write_file(outputfile,outfile)
+        outputfile = str(outputfile).replace(self.sourcedir, self.destdir)
+        self.write_file(outputfile,outfile)
         
-    def write_file(fn, data):
+    def write_file(self, fn, data):
         if not os.path.exists(os.path.dirname(fn)):
             try:  
                 os.makedirs(os.path.dirname(fn))
@@ -138,9 +138,9 @@ class H2INC:
         
     def analyzer(self, ln):
         word = [w for w in ln.split()]
-            for w in word:
-                if w in hdr_keywords:
-                    v=hdr_keywords[w]
-                       self.tupline.append(v)
-                self.tupline.append(w)
+        for w in word:
+            if w in hdr_keywords:
+                v=hdr_keywords[w]
+                self.tupline.append(v)
+        self.tupline.append(w)
         return tupline
