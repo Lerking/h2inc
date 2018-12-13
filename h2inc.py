@@ -1,6 +1,7 @@
 import os
 
 #Element type definitions. Used in the parse process.
+ELEMENT_TYPE_UNKNOWN = -1
 ELEMENT_TYPE_DEFINE = 1
 ELEMENT_TYPE_INCLUDE = 2
 ELEMENT_TYPE_UNDEF = 3
@@ -52,8 +53,8 @@ class H2INC:
     def __init__(self):
         self.filelist = []
         self.folderlist = []
-        self.sourcedir = "/usr/src"
-        self.destdir = "~/include"
+        self.sourcedir = "/usr/include"
+        self.destdir = "/data/include"
         self.filecnt = 0
         self.foldercnt = 0
         self.tupline = []
@@ -71,12 +72,12 @@ class H2INC:
         else:
             return False
                 
-    def srcfoldercnt(self, sourcedir):
+    def srcfoldercnt(self, src):
         ### Return the number of folders, if it contains '*.h' files, in sourcedir - including subdirectories ###
-        for folderName, subfolders, files in os.walk(self.sourcedir):
+        for folderName, subfolders, files in os.walk(src):
             if subfolders:
                 for subfolder in subfolders:
-                    self.foldercnt(subfolder)
+                    self.srcfoldercnt(subfolder)
             tempf = [file for file in files if file.lower().endswith('.h')]
             if tempf:
                 self.foldercnt = self.foldercnt+1
@@ -89,6 +90,9 @@ class H2INC:
     def read_file(self, fn):
         outfile = ''
         inputfile = fn
+        passes = 0
+        tempfile = []
+        templine = []
         encodings = ['utf-8', 'latin-1', 'windows-1250', 'windows-1252', 'ascii',
                     'big5', 'big5hkscs', 'cp037', 'cp273', 'cp424', 'cp437', 'cp500',
                     'cp720', 'cp737', 'cp775', 'cp850', 'cp852', 'cp855', 'cp856',
@@ -113,17 +117,26 @@ class H2INC:
             except UnicodeDecodeError:
                 print('got unicode error with %s , trying different encoding' % e)
             else:
-                #print('opening the file with encoding:  %s ' % e)
                 break 
-        #print(os.path.basename(data))
+        self.tupfile = []
         for lines in fh:
-            #outfile = outfile+lines - Initial phase
-            analyzed_line = analyzer(lines)
-            tupfile.append(analysed_line)
+            #outfile = outfile+lines #Initial phase
+            self.tupline = []
+            analyzed_line = self.analyzer(lines)
+            self.tupfile.append(analyzed_line)
+            #self.tupfile.append(lines)
+        passes += 1
         fh.close()
-        outputfile = os.path.splitext(inputfile)[0]+'.inc'
-        outputfile = str(outputfile).replace(self.sourcedir, self.destdir)
-        self.write_file(outputfile,outfile)
+        for l in self.tupfile:
+            if len(l) == 0:
+                continue
+            if l[0] == ELEMENT_TYPE_INCLUDE:
+                templine.append('%include'+' '+str(self.parseinclude(l[1])))
+        #outputfile = os.path.splitext(inputfile)[0]+'.inc'
+        #outputfile = str(outputfile).replace(self.sourcedir, self.destdir)
+        #print(outputfile)
+        #print(os.path.dirname(outputfile))
+        #self.write_file(outputfile,outfile)
         
     def write_file(self, fn, data):
         if not os.path.exists(os.path.dirname(fn)):
@@ -135,12 +148,36 @@ class H2INC:
         newfile = open(fn, "w")
         newfile.write(data)
         newfile.close()
-        
+
+    def parseinclude(self, data):
+        tempstr = str(data)
+        if tempstr.startswith('<'):
+            tempstr = tempstr.replace('<', '"')
+            tempstr = tempstr.replace('.h>', '.inc"')
+        if tempstr.endswith('.h'):
+            tempstr = '"'+tempstr
+            tempstr = tempstr.replace('.h', '.inc"')
+        return tempstr
+
     def analyzer(self, ln):
         word = [w for w in ln.split()]
         for w in word:
             if w in hdr_keywords:
-                v=hdr_keywords[w]
+                v = hdr_keywords[w]
                 self.tupline.append(v)
-        self.tupline.append(w)
-        return tupline
+            else:
+                self.tupline.append(w)
+        return self.tupline
+
+if __name__ == "__main__":
+    app = H2INC()
+    if app.srcfilecnt(app.sourcedir) == True:
+        print(app.filecnt)
+        #print(app.filelist)
+        if app.srcfoldercnt(app.sourcedir) == True:
+            print(app.foldercnt)
+            #print(app.folderlist)
+        #for f in app.filelist:
+            #app.read_file(f)
+        app.read_file("gtk.h") #testfile for comments and header includes
+        print(app.tupfile)
