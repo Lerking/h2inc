@@ -1,3 +1,4 @@
+"""Contains class PARSER"""
 from itertools import count
 
 TOKENS = ['CSTART','CMID','CEND','RPAREN','LPAREN','ENDLINE','RETVAL','PREPROCESS',
@@ -50,7 +51,7 @@ ELEMENT_TYPE_COMMENT_MULTILINE = 21
 ELEMENT_TYPE_COMMENT_END = 22
 
 #Keyword : Element type dictionary, for read C-header line.
-hdr_keywords = {'/*': ELEMENT_TYPE_COMMENT_START,
+HDR_KEYWORDS = {'/*': ELEMENT_TYPE_COMMENT_START,
                 '*': ELEMENT_TYPE_COMMENT_MULTILINE,
                 '*/': ELEMENT_TYPE_COMMENT_END,
                 '#define': ELEMENT_TYPE_DEFINE,
@@ -66,7 +67,7 @@ hdr_keywords = {'/*': ELEMENT_TYPE_COMMENT_START,
                 '#pragma': ELEMENT_TYPE_PRAGMA}        
 
 #Element type : keyword, for assembly include output file.
-inc_keywords = {ELEMENT_TYPE_COMMENT_START: ';',
+INC_KEYWORDS = {ELEMENT_TYPE_COMMENT_START: ';',
                 ELEMENT_TYPE_COMMENT_MULTILINE: ';',
                 ELEMENT_TYPE_COMMENT_END: '',
                 ELEMENT_TYPE_DEFINE: '%define',
@@ -112,8 +113,8 @@ class PARSEOBJECT:
     def analyzer(self, ln):
         word = [w for w in ln.split()]
         for w in word:
-            if w in hdr_keywords:
-                v = hdr_keywords[w]
+            if w in HDR_KEYWORDS:
+                v = HDR_KEYWORDS[w]
                 self.tupline.append(v)
             else:
                 self.tupline.append(w)
