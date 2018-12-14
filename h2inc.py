@@ -1,53 +1,5 @@
 import os
-
-#Element type definitions. Used in the parse process.
-ELEMENT_TYPE_UNKNOWN = -1
-ELEMENT_TYPE_DEFINE = 1
-ELEMENT_TYPE_INCLUDE = 2
-ELEMENT_TYPE_UNDEF = 3
-ELEMENT_TYPE_IFDEF = 4
-ELEMENT_TYPE_IFNDEF = 5
-ELEMENT_TYPE_IF = 6
-ELEMENT_TYPE_ELSE = 7
-ELEMENT_TYPE_ELIF = 8
-ELEMENT_TYPE_ENDIF = 9
-ELEMENT_TYPE_ERROR = 10
-ELEMENT_TYPE_PRAGMA = 11
-ELEMENT_TYPE_COMMENT_START = 20
-ELEMENT_TYPE_COMMENT_MULTILINE = 21
-ELEMENT_TYPE_COMMENT_END = 22
-
-#Keyword : Element type dictionary, for read C-header line.
-hdr_keywords = {'/*': ELEMENT_TYPE_COMMENT_START,
-                '*': ELEMENT_TYPE_COMMENT_MULTILINE,
-                '*/': ELEMENT_TYPE_COMMENT_END,
-                '#define': ELEMENT_TYPE_DEFINE,
-                '#include': ELEMENT_TYPE_INCLUDE,
-                '#undef': ELEMENT_TYPE_UNDEF,
-                '#ifdef': ELEMENT_TYPE_IFDEF,
-                '#ifndef': ELEMENT_TYPE_IFNDEF,
-                '#if': ELEMENT_TYPE_IF,
-                '#else': ELEMENT_TYPE_ELSE,
-                '#elif': ELEMENT_TYPE_ELIF,
-                '#endif': ELEMENT_TYPE_ENDIF,
-                '#error': ELEMENT_TYPE_ERROR,
-                '#pragma': ELEMENT_TYPE_PRAGMA}        
-
-#Element type : keyword, for assembly include output file.
-inc_keywords = {ELEMENT_TYPE_COMMENT_START: ';',
-                ELEMENT_TYPE_COMMENT_MULTILINE: ';',
-                ELEMENT_TYPE_COMMENT_END: '',
-                ELEMENT_TYPE_DEFINE: '%define',
-                ELEMENT_TYPE_INCLUDE: '%include',
-                ELEMENT_TYPE_UNDEF: '%undef',
-                ELEMENT_TYPE_IFDEF: '%ifdef',
-                ELEMENT_TYPE_IFNDEF: '%ifndef',
-                ELEMENT_TYPE_IF: '%if',
-                ELEMENT_TYPE_ELSE: '%else',
-                ELEMENT_TYPE_ELIF: '%elif',
-                ELEMENT_TYPE_ENDIF: '%endif',
-                ELEMENT_TYPE_ERROR: '%error',
-                ELEMENT_TYPE_PRAGMA: '%pragma'}
+from parser import PARSER
 
 class H2INC:
     def __init__(self):
@@ -57,8 +9,6 @@ class H2INC:
         self.destdir = "/data/include"
         self.filecnt = 0
         self.foldercnt = 0
-        self.tupline = []
-        self.tupfile = []
         
     def srcfilecnt(self, sourcedir):
         ### Return the number of files, ending with '.h', in sourcedir - including subdirectories ###
@@ -88,6 +38,7 @@ class H2INC:
             return False
         
     def read_file(self, fn):
+        parse = PARSER()
         outfile = ''
         inputfile = fn
         passes = 0
@@ -122,16 +73,12 @@ class H2INC:
         for lines in fh:
             #outfile = outfile+lines #Initial phase
             self.tupline = []
-            analyzed_line = self.analyzer(lines)
+            analyzed_line = parse.analyzer(lines)
             self.tupfile.append(analyzed_line)
             #self.tupfile.append(lines)
         passes += 1
         fh.close()
-        for l in self.tupfile:
-            if len(l) == 0:
-                continue
-            if l[0] == ELEMENT_TYPE_INCLUDE:
-                templine.append('%include'+' '+str(self.parseinclude(l[1])))
+        
         #outputfile = os.path.splitext(inputfile)[0]+'.inc'
         #outputfile = str(outputfile).replace(self.sourcedir, self.destdir)
         #print(outputfile)
@@ -149,25 +96,6 @@ class H2INC:
         newfile.write(data)
         newfile.close()
 
-    def parseinclude(self, data):
-        tempstr = str(data)
-        if tempstr.startswith('<'):
-            tempstr = tempstr.replace('<', '"')
-            tempstr = tempstr.replace('.h>', '.inc"')
-        if tempstr.endswith('.h'):
-            tempstr = '"'+tempstr
-            tempstr = tempstr.replace('.h', '.inc"')
-        return tempstr
-
-    def analyzer(self, ln):
-        word = [w for w in ln.split()]
-        for w in word:
-            if w in hdr_keywords:
-                v = hdr_keywords[w]
-                self.tupline.append(v)
-            else:
-                self.tupline.append(w)
-        return self.tupline
 
 if __name__ == "__main__":
     app = H2INC()
