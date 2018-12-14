@@ -1,3 +1,4 @@
+"""Script for translating C-header files into nasm syntax include files"""
 import os
 from parser import PARSER
 
