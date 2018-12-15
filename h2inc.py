@@ -72,13 +72,10 @@ class H2INC:
                 break 
         self.tupfile = []
         for lines in fh:
-            #outfile = outfile+lines #Initial phase
-            self.tupline = []
-            analyzed_line = parse.analyzer(lines)
-            self.tupfile.append(analyzed_line)
-            #self.tupfile.append(lines)
-        passes += 1
+            self.tupfile.append(lines)
         fh.close()
+        resultfile = parse.parseheader(self.tupfile)
+        print(resultfile)
         
         #outputfile = os.path.splitext(inputfile)[0]+'.inc'
         #outputfile = str(outputfile).replace(self.sourcedir, self.destdir)
@@ -109,4 +106,3 @@ if __name__ == "__main__":
         #for f in app.filelist:
             #app.read_file(f)
         app.read_file("gtk.h") #testfile for comments and header includes
-        print(app.tupfile)

@@ -1,9 +1,15 @@
 """Contains class PARSER"""
 from itertools import count
 
-TOKENS = ['CSTART','CMID','CEND','RPAREN','LPAREN','ENDLINE','RETVAL','PREPROCESS',
-        'ID','PLUS','MINUS','DIV','MULT','ASSIGN','EQUAL','LBRACE','RBRACE',
-        'COMMA','SEMICOLON','LANGLE','RANGLE','POINTER']
+#Element type definitions. Used in the parse process.
+ELEMENT_TYPE_PREPROCESS = 1
+ELEMENT_TYPE_REGULAR = 2
+
+TOKENS = ['TOKEN_CSTART','TOKEN_CMID','TOKEN_CEND','TOKEN_RPAREN',
+        'TOKEN_LPAREN','TOKEN_ENDLINE','TOKEN_RETVAL','TOKEN_PREPROCESS',
+        'TOKEN_ID','TOKEN_PLUS','TOKEN_MINUS','TOKEN_DIV','TOKEN_MULT',
+        'TOKEN_ASSIGN','TOKEN_EQUAL','TOKEN_LBRACE','TOKEN_RBRACE',
+        'TOKEN_COMMA','TOKEN_SEMICOLON','TOKEN_LANGLE','TOKEN_RANGLE','TOKEN_POINTER']
 
 RESERVED = {'auto'  : 'AUTO','break' : 'BREAK','case' : 'CASE','char' : 'CHAR',
         'const' : 'CONST','continue' : 'CONTINUE','default' : 'DEFAULT','do' : 'DO',
@@ -14,80 +20,55 @@ RESERVED = {'auto'  : 'AUTO','break' : 'BREAK','case' : 'CASE','char' : 'CHAR',
         'double' : 'DOUBLE','else' : 'ELSE','enum' : 'ENUM','extern' : 'EXTERN',
         'float' : 'FLOAT','for' : 'FOR','goto' : 'GOTO','if' : 'IF'}
 
-PREPROCESSOR_DIRECTIVES = {'#include' : 'PREPROCESS','#define' : 'PREPROCESS','#undef' : 'PREPROCESS',
-        '#if' : 'PREPROCESS','#ifdef' : 'PREPROCESS','#ifndef' : 'PREPROCESS','#error' : 'PREPROCESS',
-        '__FILE__' : 'PREPROCESS','__LINE__' : 'PREPROCESS','__DATE__' : 'PREPROCESS',
-        '__TIME__' : 'PREPROCESS','__TIMESTAMP__' : 'PREPROCESS','pragma' : 'PREPROCESS',
-        '#' : 'PREPROCESS','##' : 'PREPROCESS'}
+PREPROCESSOR_DIRECTIVES = {'#include' : 'TOKEN_PREPROCESS','#define' : 'TOKEN_PREPROCESS','#undef' : 'TOKEN_PREPROCESS',
+        '#if' : 'TOKEN_PREPROCESS','#ifdef' : 'TOKEN_PREPROCESS','#ifndef' : 'TOKEN_PREPROCESS','#error' : 'TOKEN_PREPROCESS',
+        '__FILE__' : 'TOKEN_PREPROCESS','__LINE__' : 'TOKEN_PREPROCESS','__DATE__' : 'TOKEN_PREPROCESS',
+        '__TIME__' : 'TOKEN_PREPROCESS','__TIMESTAMP__' : 'TOKEN_PREPROCESS','pragma' : 'TOKEN_PREPROCESS',
+        '#' : 'TOKEN_PREPROCESS','##' : 'TOKEN_PREPROCESS','#endif' : 'TOKEN_PREPROCESS'}
 
-REGULAR = {'/*' : 'CSTART','*/' : 'CEND','=' : 'ASSIGN','==' : 'EQUAL',
-        '{' : 'LBRACE','}' : 'RBRACE','\+' : 'PLUS','-' : 'MINUS',
-        '\*' : 'MULT','/' : 'DIV','\(' : 'LPAREN','\)' : 'RPAREN',
-        ',' : 'COMMA',';' : 'SEMICOLON','\<' : 'LANGLE','\>' : 'RANGLE'}
+REGULAR = {'/*' : 'TOKEN_CSTART','*/' : 'TOKEN_CEND', '*' : 'TOKEN_CMID', '=' : 'TOKEN_ASSIGN','==' : 'TOKEN_EQUAL',
+        '{' : 'TOKEN_LBRACE','}' : 'TOKEN_RBRACE','\+' : 'TOKEN_PLUS','-' : 'TOKEN_MINUS',
+        '\*' : 'TOKEN_MULT','/' : 'TOKEN_DIV','\(' : 'TOKEN_LPAREN','\)' : 'TOKEN_RPAREN',
+        ',' : 'TOKEN_COMMA',';' : 'TOKEN_SEMICOLON','\<' : 'TOKEN_LANGLE','\>' : 'TOKEN_RANGLE'}
 
 NASM_PREPROCESS_DIRECTIVES = {'#include' : '$include','#define' : '$define','#undef' : '$undef',
-        '#if' : '$if','#ifdef' : '$ifdef','#ifndef' : '$ifndef',
+        '#if' : '$if','#ifdef' : '$ifdef','#ifndef' : '%ifndef','#endif' : '%endif',
         '#error' : '$error','__FILE__' : '__FILE__','__LINE__' : '__LINE__',
         '__DATE__' : '__DATE__','__TIME__' : '__TIME__','__TIMESTAMP__' : '__TIMESTAMP__',
         'pragma' : 'pragma','#' : '#','##' : '##'}
-    
+
+NASM_REGULAR = {'/*' : ';', '*' : ';', '*/' : '\n'}
+
 TOKENS += RESERVED.values()
 
-#Element type definitions. Used in the parse process.
-ELEMENT_TYPE_UNKNOWN = -1
-ELEMENT_TYPE_DEFINE = 1
-ELEMENT_TYPE_INCLUDE = 2
-ELEMENT_TYPE_UNDEF = 3
-ELEMENT_TYPE_IFDEF = 4
-ELEMENT_TYPE_IFNDEF = 5
-ELEMENT_TYPE_IF = 6
-ELEMENT_TYPE_ELSE = 7
-ELEMENT_TYPE_ELIF = 8
-ELEMENT_TYPE_ENDIF = 9
-ELEMENT_TYPE_ERROR = 10
-ELEMENT_TYPE_PRAGMA = 11
-ELEMENT_TYPE_COMMENT_START = 20
-ELEMENT_TYPE_COMMENT_MULTILINE = 21
-ELEMENT_TYPE_COMMENT_END = 22
-
-#Keyword : Element type dictionary, for read C-header line.
-HDR_KEYWORDS = {'/*': ELEMENT_TYPE_COMMENT_START,
-                '*': ELEMENT_TYPE_COMMENT_MULTILINE,
-                '*/': ELEMENT_TYPE_COMMENT_END,
-                '#define': ELEMENT_TYPE_DEFINE,
-                '#include': ELEMENT_TYPE_INCLUDE,
-                '#undef': ELEMENT_TYPE_UNDEF,
-                '#ifdef': ELEMENT_TYPE_IFDEF,
-                '#ifndef': ELEMENT_TYPE_IFNDEF,
-                '#if': ELEMENT_TYPE_IF,
-                '#else': ELEMENT_TYPE_ELSE,
-                '#elif': ELEMENT_TYPE_ELIF,
-                '#endif': ELEMENT_TYPE_ENDIF,
-                '#error': ELEMENT_TYPE_ERROR,
-                '#pragma': ELEMENT_TYPE_PRAGMA}        
-
-#Element type : keyword, for assembly include output file.
-INC_KEYWORDS = {ELEMENT_TYPE_COMMENT_START: ';',
-                ELEMENT_TYPE_COMMENT_MULTILINE: ';',
-                ELEMENT_TYPE_COMMENT_END: '',
-                ELEMENT_TYPE_DEFINE: '%define',
-                ELEMENT_TYPE_INCLUDE: '%include',
-                ELEMENT_TYPE_UNDEF: '%undef',
-                ELEMENT_TYPE_IFDEF: '%ifdef',
-                ELEMENT_TYPE_IFNDEF: '%ifndef',
-                ELEMENT_TYPE_IF: '%if',
-                ELEMENT_TYPE_ELSE: '%else',
-                ELEMENT_TYPE_ELIF: '%elif',
-                ELEMENT_TYPE_ENDIF: '%endif',
-                ELEMENT_TYPE_ERROR: '%error',
-                ELEMENT_TYPE_PRAGMA: '%pragma'}
+COMMENT_SINGLE_LINE = 0
+COMMENT_MULTI_LINE = 1
 
 class PARSEOBJECT:
+    _passes = count(0)
+    
     def __init__(self):
-        self.tupline = []
-        self.tupfile = []
+        self.parseline = []
+        self.parsefile = []
         self.passes = 0
     
+    def parse_reset(self):
+        self.parseline = []
+        self.parsefile = []
+        self._passes = count(0)
+
+    def inc_passes(self):
+        self.passes = next(self._passes)
+
+    def parseheader(self, fl):
+        self.parse_reset()
+        for l in fl:
+            analyzed_line = self.analyzer(l)
+            self.parsefile.append(analyzed_line)
+        self.inc_passes()
+        self.parsetokens(self.parsefile)
+        return self.parsefile
+
     def parseinclude(self, data):
         tempstr = str(data)
         if tempstr.startswith('<'):
@@ -98,39 +79,70 @@ class PARSEOBJECT:
             tempstr = tempstr.replace('.h', '.inc"')
         return tempstr
 
-    def lexer_get_token(k):
-        prep = keywords.preprocessor_directives
-        reg = keywords.regular
+    def tokenizer(self, w):
         token = ""
-
-        if w in prep:
-            token = prep(w)
-        if w in reg:
-            token = reg(w)
-
-        return token
+        if w in PREPROCESSOR_DIRECTIVES:
+            token = PREPROCESSOR_DIRECTIVES.get(w)
+            return token
+        if w in REGULAR:
+            token = REGULAR.get(w)
+            return token
+        return False
 
     def analyzer(self, ln):
+        analysed = []
         word = [w for w in ln.split()]
         for w in word:
-            if w in HDR_KEYWORDS:
-                v = HDR_KEYWORDS[w]
-                self.tupline.append(v)
+            t = self.tokenizer(w)
+            if t == False:
+                analysed.append(w)
+                continue
             else:
-                self.tupline.append(w)
-        return self.tupline
+                analysed.append(t)
+                analysed.append(w)
+        return analysed
 
-        for l in self.tupfile:
+    def parsetokens(self, fl):
+        templine = []
+        tempfile = []
+        for l in fl:
             if len(l) == 0:
                 continue
-            if l[0] == ELEMENT_TYPE_INCLUDE:
-                templine.append('%include'+' '+str(self.parseinclude(l[1])))
+            if l[0] == "TOKEN_CSTART":
+                if l[-1] == "TOKEN_CEND":
+                    tempfile.append(self.parse_comment(l,COMMENT_SINGLE_LINE))
+                else:
+                    tempfile.append(self.parse_comment(l,COMMENT_MULTI_LINE))
+            if l[0] == "TOKEN_PREPROCESS":
+                tempfile.append(self.parse_preprocess(l))
+
+    def parse_comment(self, l, ct):
+
+
+    def parse_preprocess(self, l):
+        newline = []
+        for e in l:
+            if e in TOKENS:
+                continue
+            for k, v in PREPROCESSOR_DIRECTIVES.items():
+                if k == e:
+                    newline.append(NASM_PREPROCESS_DIRECTIVES.get(k))
+                    break
+                break
+            if k == "#include":
+                newline.append(self.parseinclude(e)
+            else:
+                newline.append(e)
+        newline.append('\n')
+        return newline
+                
 
 class PARSER(PARSEOBJECT):
     _ids = count(0)
+    _passes = count(0)
 
     def __init__(self):
         self.id = next(self._ids)
         self.tupline = []
         self.tupfile = []
-        self.passes = 0
+        self.passes = next(self._passes)
