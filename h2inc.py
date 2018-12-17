@@ -109,5 +109,5 @@ if __name__ == "__main__":
         print(app.filecnt)
         if app.srcfoldercnt(app.sourcedir) == True:
             print(app.foldercnt)
-        #app.read_file("./gtk.h") #testfile for comments and header includes
-        app.process_directory()
+        app.read_file("./gtkwindow.h") #testfile for comments and header includes
+        #app.process_directory()

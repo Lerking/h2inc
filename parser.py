@@ -37,6 +37,8 @@ NASM_PREPROCESS_DIRECTIVES = {'#include' : '%include','#define' : '%define','#un
         '__DATE__' : '__DATE__','__TIME__' : '__TIME__','__TIMESTAMP__' : '__TIMESTAMP__',
         'pragma' : 'pragma','#' : '#','##' : '##'}
 
+NASM_ENUM = "EQU"
+
 NASM_REGULAR = {'/*' : ';', '*' : ';', '*/' : ''}
 
 TOKENS += RESERVED.values()
@@ -57,6 +59,7 @@ class PARSEOBJECT:
         self.parsefile = []
         self._passes = count(0)
         self.inside_comment = False
+        self.inside_typedef = False
 
     def inc_passes(self):
         self.passes = next(self._passes)
@@ -115,9 +118,21 @@ class PARSEOBJECT:
                 self.inside_comment = True
                 tempfile.append(self.parse_comment(l))
                 continue
+            if l[0] == "TYPEDEF" or l[0] == "typedef":
+                tempfile.append(self.parse_typedef(l))
+                continue
             if l[0] == "TOKEN_PREPROCESS":
                 tempfile.append(self.parse_preprocess(l))
         return tempfile
+
+    def parse_typedef(self, l):
+        templine = []
+        for w in l:
+            if w == "TYPEDEF":
+                self.inside_typedef = True
+                continue
+            if w == "ENUM":
+                continue
 
     def parse_comment(self, l):
         templine = []
