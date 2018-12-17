@@ -1,15 +1,18 @@
+"""Script for translating C-header files into nasm syntax include files"""
 import os
+import errno
+from parser import PARSER
 
 class H2INC:
     def __init__(self):
         self.filelist = []
         self.folderlist = []
-        self.sourcedir = "/usr/src"
-        self.destdir = "~/include"
+        self.sourcedir = "/usr/include"
+        self.destdir = "/data/include"
         self.filecnt = 0
         self.foldercnt = 0
         
-    def srcfilecnt(self.sourcedir):
+    def srcfilecnt(self, sourcedir):
         ### Return the number of files, ending with '.h', in sourcedir - including subdirectories ###
         for folderName, subfolders, files in os.walk(self.sourcedir):
             for file in files:
@@ -21,12 +24,12 @@ class H2INC:
         else:
             return False
                 
-    def srcfoldercnt(self.sourcedir):
+    def srcfoldercnt(self, src):
         ### Return the number of folders, if it contains '*.h' files, in sourcedir - including subdirectories ###
-        for folderName, subfolders, files in os.walk(self.sourcedir):
+        for folderName, subfolders, files in os.walk(src):
             if subfolders:
                 for subfolder in subfolders:
-                    sourcedir_foldercnt(subfolder)
+                    self.srcfoldercnt(subfolder)
             tempf = [file for file in files if file.lower().endswith('.h')]
             if tempf:
                 self.foldercnt = self.foldercnt+1
@@ -36,9 +39,13 @@ class H2INC:
         else:
             return False
         
-    def read_file(fn):
+    def read_file(self, fn):
+        parse = PARSER()
         outfile = ''
         inputfile = fn
+        passes = 0
+        tempfile = []
+        templine = []
         encodings = ['utf-8', 'latin-1', 'windows-1250', 'windows-1252', 'ascii',
                     'big5', 'big5hkscs', 'cp037', 'cp273', 'cp424', 'cp437', 'cp500',
                     'cp720', 'cp737', 'cp775', 'cp850', 'cp852', 'cp855', 'cp856',
@@ -57,23 +64,30 @@ class H2INC:
                     'utf-32-le', 'utf-16', 'utf-16-be', 'utf-16-le', 'utf-7', 'utf-8-sig']
         for e in encodings:
             try:
-                fh = io.open(fn, 'r', encoding=e)
+                fh = open(fn, 'r', encoding=e)
                 fh.readlines()
                 fh.seek(0)
             except UnicodeDecodeError:
                 print('got unicode error with %s , trying different encoding' % e)
             else:
-                #print('opening the file with encoding:  %s ' % e)
                 break 
-        #print(os.path.basename(data))
+        self.tupfile = []
         for lines in fh:
-            outfile = outfile+lines
+            self.tupfile.append(lines)
         fh.close()
+        resultfile = parse.parseheader(self.tupfile)
+        print(resultfile)
+        for l in resultfile:
+            for w in l:
+                outfile += w+" "
+            outfile += "\n"
         outputfile = os.path.splitext(inputfile)[0]+'.inc'
-        outputfile = str(outputfile).replace(sourcedir, destdir)
-        write_file(outputfile,outfile)
+        outputfile = str(outputfile).replace(self.sourcedir, self.destdir)
+        print(outputfile)
+        print(os.path.dirname(outputfile))
+        self.write_file(outputfile,outfile)
         
-    def write_file(fn, data):
+    def write_file(self, fn, data):
         if not os.path.exists(os.path.dirname(fn)):
             try:  
                 os.makedirs(os.path.dirname(fn))
@@ -83,4 +97,16 @@ class H2INC:
         newfile = open(fn, "w")
         newfile.write(data)
         newfile.close()
-        
+
+
+if __name__ == "__main__":
+    app = H2INC()
+    if app.srcfilecnt(app.sourcedir) == True:
+        print(app.filecnt)
+        #print(app.filelist)
+        if app.srcfoldercnt(app.sourcedir) == True:
+            print(app.foldercnt)
+            #print(app.folderlist)
+        #for f in app.filelist:
+            #app.read_file(f)
+        app.read_file("./gtk.h") #testfile for comments and header includes
