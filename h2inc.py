@@ -1,5 +1,6 @@
 """Script for translating C-header files into nasm syntax include files"""
 import os
+import errno
 from parser import PARSER
 
 class H2INC:
@@ -76,12 +77,15 @@ class H2INC:
         fh.close()
         resultfile = parse.parseheader(self.tupfile)
         print(resultfile)
-        
-        #outputfile = os.path.splitext(inputfile)[0]+'.inc'
-        #outputfile = str(outputfile).replace(self.sourcedir, self.destdir)
-        #print(outputfile)
-        #print(os.path.dirname(outputfile))
-        #self.write_file(outputfile,outfile)
+        for l in resultfile:
+            for w in l:
+                outfile += w+" "
+            outfile += "\n"
+        outputfile = os.path.splitext(inputfile)[0]+'.inc'
+        outputfile = str(outputfile).replace(self.sourcedir, self.destdir)
+        print(outputfile)
+        print(os.path.dirname(outputfile))
+        self.write_file(outputfile,outfile)
         
     def write_file(self, fn, data):
         if not os.path.exists(os.path.dirname(fn)):
@@ -105,4 +109,4 @@ if __name__ == "__main__":
             #print(app.folderlist)
         #for f in app.filelist:
             #app.read_file(f)
-        app.read_file("gtk.h") #testfile for comments and header includes
+        app.read_file("./gtk.h") #testfile for comments and header includes

@@ -37,7 +37,7 @@ NASM_PREPROCESS_DIRECTIVES = {'#include' : '$include','#define' : '$define','#un
         '__DATE__' : '__DATE__','__TIME__' : '__TIME__','__TIMESTAMP__' : '__TIMESTAMP__',
         'pragma' : 'pragma','#' : '#','##' : '##'}
 
-NASM_REGULAR = {'/*' : ';', '*' : ';', '*/' : '\n'}
+NASM_REGULAR = {'/*' : ';', '*' : ';', '*/' : ''}
 
 TOKENS += RESERVED.values()
 
@@ -56,17 +56,19 @@ class PARSEOBJECT:
         self.parseline = []
         self.parsefile = []
         self._passes = count(0)
+        self.inside_comment = False
 
     def inc_passes(self):
         self.passes = next(self._passes)
 
     def parseheader(self, fl):
+        tempfile = []
         self.parse_reset()
         for l in fl:
             analyzed_line = self.analyzer(l)
-            self.parsefile.append(analyzed_line)
+            tempfile.append(analyzed_line)
         self.inc_passes()
-        self.parsetokens(self.parsefile)
+        self.parsefile = self.parsetokens(tempfile)
         return self.parsefile
 
     def parseinclude(self, data):
@@ -107,33 +109,42 @@ class PARSEOBJECT:
         tempfile = []
         for l in fl:
             if len(l) == 0:
+                templine.append("\n")
                 continue
-            if l[0] == "TOKEN_CSTART":
-                if l[-1] == "TOKEN_CEND":
-                    tempfile.append(self.parse_comment(l,COMMENT_SINGLE_LINE))
-                else:
-                    tempfile.append(self.parse_comment(l,COMMENT_MULTI_LINE))
+            if l[0] == "TOKEN_CSTART" or l[0] == "TOKEN_CMID" or l[0] == "TOKEN_CEND":
+                self.inside_comment = True
+                tempfile.append(self.parse_comment(l))
+                continue
             if l[0] == "TOKEN_PREPROCESS":
                 tempfile.append(self.parse_preprocess(l))
+        return tempfile
 
-    def parse_comment(self, l, ct):
-
+    def parse_comment(self, l):
+        templine = []
+        for w in l:
+            if w in TOKENS:
+                continue
+            if w in NASM_REGULAR:
+                templine.append(NASM_REGULAR.get(w))
+                continue
+            templine.append(w)
+        return templine
 
     def parse_preprocess(self, l):
         newline = []
-        for e in l:
-            if e in TOKENS:
+        for w in l:
+            if w in TOKENS:
                 continue
-            for k, v in PREPROCESSOR_DIRECTIVES.items():
-                if k == e:
-                    newline.append(NASM_PREPROCESS_DIRECTIVES.get(k))
-                    break
-                break
-            if k == "#include":
-                newline.append(self.parseinclude(e)
-            else:
-                newline.append(e)
-        newline.append('\n')
+            if w in PREPROCESSOR_DIRECTIVES:
+                newline.append(NASM_PREPROCESS_DIRECTIVES.get(w))
+                continue
+            if w.startswith("<"):
+                newline.append(self.parseinclude(w))
+                continue
+            if w in NASM_REGULAR:
+                newline.append(NASM_REGULAR.get(w))
+                continue
+            newline.append(w)
         return newline
                 
 
