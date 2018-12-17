@@ -31,9 +31,9 @@ REGULAR = {'/*' : 'TOKEN_CSTART','*/' : 'TOKEN_CEND', '*' : 'TOKEN_CMID', '=' : 
         '\*' : 'TOKEN_MULT','/' : 'TOKEN_DIV','\(' : 'TOKEN_LPAREN','\)' : 'TOKEN_RPAREN',
         ',' : 'TOKEN_COMMA',';' : 'TOKEN_SEMICOLON','\<' : 'TOKEN_LANGLE','\>' : 'TOKEN_RANGLE'}
 
-NASM_PREPROCESS_DIRECTIVES = {'#include' : '$include','#define' : '$define','#undef' : '$undef',
-        '#if' : '$if','#ifdef' : '$ifdef','#ifndef' : '%ifndef','#endif' : '%endif',
-        '#error' : '$error','__FILE__' : '__FILE__','__LINE__' : '__LINE__',
+NASM_PREPROCESS_DIRECTIVES = {'#include' : '%include','#define' : '%define','#undef' : '%undef',
+        '#if' : '%if','#ifdef' : '%ifdef','#ifndef' : '%ifndef','#endif' : '%endif',
+        '#error' : '%error','__FILE__' : '__FILE__','__LINE__' : '__LINE__',
         '__DATE__' : '__DATE__','__TIME__' : '__TIME__','__TIMESTAMP__' : '__TIMESTAMP__',
         'pragma' : 'pragma','#' : '#','##' : '##'}
 
