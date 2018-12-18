@@ -60,6 +60,8 @@ class PARSEOBJECT:
         self._passes = count(0)
         self.inside_comment = False
         self.inside_typedef = False
+        self.typedef_enum = False
+        self.enum_begin = False
 
     def inc_passes(self):
         self.passes = next(self._passes)
@@ -110,7 +112,11 @@ class PARSEOBJECT:
     def parsetokens(self, fl):
         templine = []
         tempfile = []
+        enum_cnt = 0
+
         for l in fl:
+            templine = []
+            tempstr = ""
             if len(l) == 0:
                 templine.append("\n")
                 continue
@@ -119,20 +125,68 @@ class PARSEOBJECT:
                 tempfile.append(self.parse_comment(l))
                 continue
             if l[0] == "TYPEDEF" or l[0] == "typedef":
-                tempfile.append(self.parse_typedef(l))
+                self.parse_typedef(l)
+                if self.typedef_enum == False:
+                    templine.append("; ")
+                    for e in l:
+                        templine.append(e)
+                    tempfile.append(templine)
                 continue
             if l[0] == "TOKEN_PREPROCESS":
                 tempfile.append(self.parse_preprocess(l))
+                continue
+            if self.inside_typedef == True:
+                if self.typedef_enum == True:
+                    if l[0] == "TOKEN_LBRACE" and len(l) == 2:
+                        self.enum_begin = True
+                        continue
+                    if len(l) == 1:
+                        if l[0].endswith(","):
+                            tempstr = l[0]
+                            templine.append(tempstr[:-1]+"\t")
+                            templine.append("EQU\t")
+                            templine.append(str(enum_cnt)+"\n")
+                            tempfile.append(templine)
+                            enum_cnt += 1
+                            continue
+                        else:
+                            templine.append(l[0]+"\t")
+                            templine.append("EQU\t")
+                            templine.append(str(enum_cnt)+"\n")
+                            tempfile.append(templine)
+                            enum_cnt += 1
+                            continue
+                        continue
+                    if len(l) == 3:
+                        if l[0].endswith(","):
+                            tempstr = l[0]
+                            enum_cnt = l[2]
+                            templine.append(tempstr[:-1]+"\t")
+                            templine.append("EQU"+"\t")
+                            templine.append(enum_cnt+"\n")
+                            tempfile.append(templine)
+                            continue
+                        continue
+                    if l[0] == "TOKEN_RBRACE" and len(l) == 3:
+                        self.enum_begin = False
+                        self.typedef_enum = False
+                        self.inside_typedef = False
+                        enum_cnt = 0
+                        continue
+                    continue
+                continue
         return tempfile
 
     def parse_typedef(self, l):
         templine = []
         for w in l:
-            if w == "TYPEDEF":
+            if w == "TYPEDEF" or w == "typedef":
                 self.inside_typedef = True
                 continue
-            if w == "ENUM":
+            if w == "ENUM" or w == "enum":
+                self.typedef_enum = True
                 continue
+            
 
     def parse_comment(self, l):
         templine = []
