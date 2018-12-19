@@ -39,6 +39,10 @@ class H2INC:
         else:
             return False
         
+    def process_directory(self):
+        for f in self.filelist:
+            self.read_file(f)
+
     def read_file(self, fn):
         parse = PARSER()
         outfile = ''
@@ -103,10 +107,7 @@ if __name__ == "__main__":
     app = H2INC()
     if app.srcfilecnt(app.sourcedir) == True:
         print(app.filecnt)
-        #print(app.filelist)
         if app.srcfoldercnt(app.sourcedir) == True:
             print(app.foldercnt)
-            #print(app.folderlist)
-        #for f in app.filelist:
-            #app.read_file(f)
-        app.read_file("./gtk.h") #testfile for comments and header includes
+        app.read_file("./gtkwindow.h") #testfile for comments and header includes
+        #app.process_directory()
