@@ -11,7 +11,8 @@ TOKENS = ['TOKEN_CSTART','TOKEN_CMID','TOKEN_CEND','TOKEN_RPAREN',
         'TOKEN_LPAREN','TOKEN_ENDLINE','TOKEN_RETVAL','TOKEN_PREPROCESS',
         'TOKEN_ID','TOKEN_PLUS','TOKEN_MINUS','TOKEN_DIV','TOKEN_MULT',
         'TOKEN_ASSIGN','TOKEN_EQUAL','TOKEN_LBRACE','TOKEN_RBRACE',
-        'TOKEN_COMMA','TOKEN_SEMICOLON','TOKEN_LANGLE','TOKEN_RANGLE','TOKEN_POINTER']
+        'TOKEN_COMMA','TOKEN_SEMICOLON','TOKEN_LANGLE','TOKEN_RANGLE',
+        'TOKEN_POINTER', 'TOKEN_STRUCT']
 
 RESERVED = {'auto'  : 'AUTO','break' : 'BREAK','case' : 'CASE','char' : 'CHAR',
         'const' : 'CONST','continue' : 'CONTINUE','default' : 'DEFAULT','do' : 'DO',
@@ -63,6 +64,8 @@ class PARSEOBJECT:
         self.inside_comment = False
         self.inside_typedef = False
         self.typedef_enum = False
+        self.typedef_struct = False
+        self.struct_begin = False
         self.enum_begin = False
 
     def inc_passes(self):
@@ -119,22 +122,46 @@ class PARSEOBJECT:
         for l in fl:
             templine = []
             tempstr = ""
-            if len(l) == 0:
-                templine.append("\n")
+            if l == []:
+                tempfile.append("\n")
                 continue
-            if l[0] == "TOKEN_CSTART" or l[0] == "TOKEN_CMID" or l[0] == "TOKEN_CEND":
+            if "TOKEN_CSTART" in l:
                 self.inside_comment = True
                 tempfile.append(self.parse_comment(l))
                 continue
-            if l[0] == "TYPEDEF" or l[0] == "typedef":
+            if "TOKEN_CMID" in l:
+                self.inside_comment = True
+                tempfile.append(self.parse_comment(l))
+                continue
+            if "TOKEN_CEND" in l:
+                self.inside_comment = True
+                tempfile.append(self.parse_comment(l))
+                continue
+            if "TYPEDEF" in l:
                 self.parse_typedef(l)
-                if self.typedef_enum == False:
+                if self.typedef_enum == False and self.typedef_struct == False:
                     templine.append("; ")
                     for e in l:
                         templine.append(e)
                     tempfile.append(templine)
+                if self.typedef_struct == True:
+                    templine.append('struc')
+                    templine.append(l[-1])
+                    tempfile.append(templine)
                 continue
-            if l[0] == "TOKEN_PREPROCESS":
+            if "typedef" in l:
+                self.parse_typedef(l)
+                if self.typedef_enum == False and self.typedef_struct == False:
+                    templine.append("; ")
+                    for e in l:
+                        templine.append(e)
+                    tempfile.append(templine)
+                if self.typedef_struct == True:
+                    templine.append('struc')
+                    templine.append(l[-1])
+                    tempfile.append(templine)
+                continue
+            if "TOKEN_PREPROCESS" in l:
                 tempfile.append(self.parse_preprocess(l))
                 continue
             if self.inside_typedef == True:
@@ -148,16 +175,15 @@ class PARSEOBJECT:
                             tempstr = l[0]
                             templine.append(tempstr[:-1]+"\t")
                             templine.append("EQU\t")
-                            templine.append(str(enum_cnt)+"\n")
+                            templine.append(str(enum_cnt))
                             tempfile.append(templine)
                             enum_cnt += 1
                             continue
                         else:
                             templine.append(l[0]+"\t")
                             templine.append("EQU\t")
-                            templine.append(str(enum_cnt)+"\n")
+                            templine.append(str(enum_cnt))
                             tempfile.append(templine)
-                            enum_cnt += 1
                             continue
                     if len(l) == 3:
                         if l[0].endswith(","):
@@ -165,7 +191,7 @@ class PARSEOBJECT:
                             enum_cnt = l[2]
                             templine.append(tempstr[:-1]+"\t")
                             templine.append("EQU"+"\t")
-                            templine.append(enum_cnt+"\n")
+                            templine.append(enum_cnt)
                             tempfile.append(templine)
                             continue
                     if l[0] == "TOKEN_RBRACE" and len(l) == 3:
@@ -184,9 +210,11 @@ class PARSEOBJECT:
                 continue
             if w == "ENUM" or w == "enum":
                 self.typedef_enum = True
+                self.typedef_struct = False
                 continue
             if w == "STRUCT" or w == "struct":
-                self.inside_typedef = False
+                self.typedef_struct = True
+                self.typedef_enum = False
                 continue
             
 
