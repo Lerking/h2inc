@@ -1,4 +1,6 @@
-"""Contains class PARSER"""
+'''
+Contains class PARSER
+'''
 from itertools import count
 
 #Element type definitions. Used in the parse process.

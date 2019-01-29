@@ -1,4 +1,6 @@
-"""Script for translating C-header files into nasm syntax include files"""
+'''
+Script for translating C-header files into nasm syntax include files
+'''
 import os
 import errno
 from parser import PARSER
@@ -13,7 +15,9 @@ class H2INC:
         self.foldercnt = 0
         
     def srcfilecnt(self, sourcedir):
+        '''
         ### Return the number of files, ending with '.h', in sourcedir - including subdirectories ###
+        '''
         for folderName, subfolders, files in os.walk(self.sourcedir):
             for file in files:
                 if file.lower().endswith('.h'):
@@ -25,7 +29,9 @@ class H2INC:
             return False
                 
     def srcfoldercnt(self, src):
+        '''
         ### Return the number of folders, if it contains '*.h' files, in sourcedir - including subdirectories ###
+        '''
         for folderName, subfolders, files in os.walk(src):
             if subfolders:
                 for subfolder in subfolders:
