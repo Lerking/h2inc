@@ -141,6 +141,7 @@ class PARSEOBJECT:
                 if self.typedef_enum == True:
                     if l[0] == "TOKEN_LBRACE" and len(l) == 2:
                         self.enum_begin = True
+                        enum_cnt = 0
                         continue
                     if len(l) == 1:
                         if l[0].endswith(","):
@@ -183,6 +184,9 @@ class PARSEOBJECT:
                 continue
             if w == "ENUM" or w == "enum":
                 self.typedef_enum = True
+                continue
+            if w == "STRUCT" or w == "struct":
+                self.inside_typedef = False
                 continue
             
 
