@@ -156,7 +156,6 @@ class PARSEOBJECT:
                             tempfile.append(templine)
                             enum_cnt += 1
                             continue
-                        continue
                     if len(l) == 3:
                         if l[0].endswith(","):
                             tempstr = l[0]
@@ -166,15 +165,12 @@ class PARSEOBJECT:
                             templine.append(enum_cnt+"\n")
                             tempfile.append(templine)
                             continue
-                        continue
                     if l[0] == "TOKEN_RBRACE" and len(l) == 3:
                         self.enum_begin = False
                         self.typedef_enum = False
                         self.inside_typedef = False
                         enum_cnt = 0
                         continue
-                    continue
-                continue
         return tempfile
 
     def parse_typedef(self, l):
