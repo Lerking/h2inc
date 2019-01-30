@@ -67,6 +67,8 @@ class PARSEOBJECT:
         self.typedef_struct = False
         self.struct_begin = False
         self.enum_begin = False
+        self.struct = False
+        self.struct_end = False
 
     def inc_passes(self):
         self.passes = next(self._passes)
@@ -123,7 +125,8 @@ class PARSEOBJECT:
             templine = []
             tempstr = ""
             if l == []:
-                tempfile.append("\n")
+                templine.append("")
+                tempfile.append(templine)
                 continue
             if "TOKEN_CSTART" in l:
                 self.inside_comment = True
@@ -146,7 +149,10 @@ class PARSEOBJECT:
                     tempfile.append(templine)
                 if self.typedef_struct == True:
                     templine.append('struc')
-                    templine.append(l[-1])
+                    templine.append(l[-1][:-1])
+                    tempfile.append(templine)
+                    templine = []
+                    templine.append('endstruc')
                     tempfile.append(templine)
                 continue
             if "typedef" in l:
@@ -158,9 +164,15 @@ class PARSEOBJECT:
                     tempfile.append(templine)
                 if self.typedef_struct == True:
                     templine.append('struc')
-                    templine.append(l[-1])
+                    templine.append(l[-1][:-1])
+                    tempfile.append(templine)
+                    templine = []
+                    templine.append('endstruc')
                     tempfile.append(templine)
                 continue
+            if "struct" in l:
+                self.parse_struct(l)
+
             if "TOKEN_PREPROCESS" in l:
                 tempfile.append(self.parse_preprocess(l))
                 continue
@@ -201,6 +213,21 @@ class PARSEOBJECT:
                         enum_cnt = 0
                         continue
         return tempfile
+
+    def parse_struct(self, l):
+        templine = []
+        for w in l:
+            if w == "struct":
+                self.struct = True
+                templine.append('struc')
+                continue
+            if w != "":
+                templine.append(w)
+                continue
+            if w == "{" and self.struct == True:
+                self.struct_begin = True
+                continue
+        return templine
 
     def parse_typedef(self, l):
         templine = []

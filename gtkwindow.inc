@@ -14,7 +14,6 @@
 ; You should have received a copy of the GNU Lesser General Public 
 ; License along with this library. If not, see <http://www.gnu.org/licenses/>. 
  
-
  
 ; 
 ; Modified by the GTK+ Team and others 1997-2000. See the AUTHORS 
@@ -22,25 +21,19 @@
 ; files for a list of changes. These files are distributed with 
 ; GTK+ at ftp://ftp.gtk.org/pub/gtk/. 
  
-
  
 %ifndef __GTK_WINDOW_H__ 
 %define __GTK_WINDOW_H__ 
-
  
-
  
 %if !defined (__GTK_H_INSIDE__) && !defined (GTK_COMPILATION) 
 %error "Only "gtk/gtk.inc" can be included directly." 
 %endif 
-
  
 %include "gtk/gtkapplication.inc" 
 %include "gtk/gtkaccelgroup.inc" 
 %include "gtk/gtkbin.inc" 
-
  
-
  
 %define GTK_TYPE_WINDOW (gtk_window_get_type ()) 
 %define GTK_WINDOW(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), GTK_TYPE_WINDOW, GtkWindow)) 
@@ -48,19 +41,21 @@
 %define GTK_IS_WINDOW(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), GTK_TYPE_WINDOW)) 
 %define GTK_IS_WINDOW_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), GTK_TYPE_WINDOW)) 
 %define GTK_WINDOW_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), GTK_TYPE_WINDOW, GtkWindowClass)) 
-
  
-struc GtkWindowPrivate; 
-struc GtkWindowClass; 
-struc GtkWindowGeometryInfo; 
-struc GtkWindowGroup; 
-struc GtkWindowGroupClass; 
-struc GtkWindowGroupPrivate; 
-
+struc GtkWindowPrivate 
+endstruc 
+struc GtkWindowClass 
+endstruc 
+struc GtkWindowGeometryInfo 
+endstruc 
+struc GtkWindowGroup 
+endstruc 
+struc GtkWindowGroupClass 
+endstruc 
+struc GtkWindowGroupPrivate 
+endstruc 
  
-
  
-
  
 ; GtkWindowClass: 
 ; @parent_class: The parent class. 
@@ -72,21 +67,14 @@ struc GtkWindowGroupPrivate;
 ; @enable_debugging: Class handler for the #GtkWindow::enable-debugging 
 ; keybinding signal. Since: 3.14 
  
-
  
-
  
-
  
 ; G_SIGNAL_ACTION signals for keybindings  
-
  
-
  
-
  
 ; Padding for future expansion  
-
  
 ; GtkWindowType: 
 ; @GTK_WINDOW_TOPLEVEL: A regular window, such as a dialog. 
@@ -108,7 +96,6 @@ struc GtkWindowGroupPrivate;
  
 GTK_WINDOW_TOPLEVEL	 EQU	 0 
 GTK_WINDOW_POPUP	 EQU	 1 
-
  
 ; GtkWindowPosition: 
 ; @GTK_WIN_POS_NONE: No influence is made on placement. 
@@ -127,77 +114,46 @@ GTK_WIN_POS_CENTER	 EQU	 1
 GTK_WIN_POS_MOUSE	 EQU	 2 
 GTK_WIN_POS_CENTER_ALWAYS	 EQU	 3 
 GTK_WIN_POS_CENTER_ON_PARENT	 EQU	 4 
-
  
-
  
 const gchar ; gtk_window_get_title (GtkWindow *window); 
 const gchar ; gtk_window_get_role (GtkWindow *window); 
-
  
-
  
-
  
-
  
-
  
-
  
-
  
-
  
-
  
 const gchar ; gtk_window_get_icon_name (GtkWindow *window); 
 const gchar ; gtk_window_get_default_icon_name (void); 
-
  
-
  
 ; If window is set modal, input will be grabbed when show and released when hide  
-
  
-
  
-
  
-
  
-
  
 ; Set initial default size of the window (does not constrain user 
 ; resize operations) 
  
-
  
-
  
-
  
 ; Ignore this unless you are writing a GUI builder  
-
  
-
  
-
  
-
  
-
  
 ; Window grips 
  
-
  
-
  
-
  
-
  
-
  
 #endif ; __GTK_WINDOW_H__  
