@@ -74,15 +74,15 @@ GtkBinClass parent_class;
 
 TOKEN_CSTART /*< public TOKEN_CEND >*/ 
 
-TOKEN_VOID void (* set_focus) (GtkWindow *window, 
+TOKEN_VOID void TOKEN_FUNCTION_POINTER (* set_focus) (GtkWindow *window, 
 GtkWidget *focus); 
 
 TOKEN_CSTART /* G_SIGNAL_ACTION signals for keybindings TOKEN_CEND */ 
 
-TOKEN_VOID void (* activate_focus) (GtkWindow *window); 
-TOKEN_VOID void (* activate_default) (GtkWindow *window); 
-TOKEN_VOID void (* keys_changed) (GtkWindow *window); 
-gboolean (* enable_debugging) (GtkWindow *window, 
+TOKEN_VOID void TOKEN_FUNCTION_POINTER (* activate_focus) (GtkWindow *window); 
+TOKEN_VOID void TOKEN_FUNCTION_POINTER (* activate_default) (GtkWindow *window); 
+TOKEN_VOID void TOKEN_FUNCTION_POINTER (* keys_changed) (GtkWindow *window); 
+gboolean TOKEN_FUNCTION_POINTER (* enable_debugging) (GtkWindow *window, 
 gboolean toggle); 
 
 TOKEN_CSTART /*< private TOKEN_CEND >*/ 

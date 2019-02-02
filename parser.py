@@ -10,7 +10,7 @@ ELEMENT_TYPE_REGULAR = 2
 
 TOKENS = ['TOKEN_CSTART','TOKEN_CMID','TOKEN_CEND','TOKEN_RPAREN',
         'TOKEN_LPAREN','TOKEN_ENDLINE','TOKEN_RETVAL','TOKEN_TYPEDEF',
-        'TOKEN_ID','TOKEN_PLUS','TOKEN_MINUS','TOKEN_DIV','TOKEN_MULT',
+        'TOKEN_IF','TOKEN_PLUS','TOKEN_MINUS','TOKEN_DIV','TOKEN_MULT',
         'TOKEN_ASSIGN','TOKEN_EQUAL','TOKEN_LBRACE','TOKEN_RBRACE',
         'TOKEN_COMMA','TOKEN_SEMICOLON','TOKEN_LANGLE','TOKEN_RANGLE',
         'TOKEN_POINTER', 'TOKEN_STRUCT','TOKEN_ENUM']
@@ -40,7 +40,8 @@ REGULAR = {'/*' : 'TOKEN_CSTART','/**' : 'TOKEN_CSTART','*/' : 'TOKEN_CEND', '*'
         'short' : 'TOKEN_SHORT','SHORT' : 'TOKEN_SHORT','signed' : 'TOKEN_SIGNED','SIGNED' : 'TOKEN_SIGNED',
         'unsigned' : 'TOKEN_UNSIGNED','UNSIGNED' : 'TOKEN_UNSIGNED','void' : 'TOKEN_VOID','VOID' : 'TOKEN_VOID',
         'volatile' : 'TOKEN_VOLATILE','VOLATILE' : 'TOKEN_VOLATILE','double' : 'TOKEN_DOUBLE','DOUBLE' : 'TOKEN_DOUBLE',
-        'float' : 'TOKEN_FLOAT','FLOAT' : 'TOKEN_FLOAT', '!defined' : 'TOKEN_NOT_DEFINED', '!DEFINED' : 'TOKEN_NOT_DEFINED'}
+        'float' : 'TOKEN_FLOAT','FLOAT' : 'TOKEN_FLOAT', '!defined' : 'TOKEN_NOT_DEFINED', '!DEFINED' : 'TOKEN_NOT_DEFINED',
+        'boolean' : 'TOKEN_BOOLEAN', 'BOOLEAN' : 'TOKEN_BOOLEAN', '(*' : 'TOKEN_FUNCTION_POINTER'}
 
 NASM_PREPROCESS_DIRECTIVES = {'#include' : '%include','#define' : '%define','#undef' : '%undef',
         '#if' : '%if','#ifdef' : '%ifdef','#ifndef' : '%ifndef','#endif' : '%endif',
@@ -56,12 +57,15 @@ NASM_REGULAR = {'/*' : ';', '*' : ';', '*/' : ''}
 
 PARSER_TOKENS = ['PARSE_MULTILINE_COMMENT', 'PARSE_SINGLELINE_COMMENT', 'PARSE_TYPEDEF_ENUM', 'PARSE_TYPEDEF_STRUCT',
                 'PARSE_TYPEDEF_STRUCT_STRUCT', 'PARSE_STRUCT', 'PARSE_TAG_NAME', 'PARSE_STRUCT_MEMBER', 'PARSE_ENDSTRUCT',
-                'PARSE_ALIAS', 'PARSE_FUNCTION_POINTER', 'PARSE_FUNCTION']
+                'PARSE_ALIAS', 'PARSE_FUNCTION_POINTER', 'PARSE_FUNCTION', 'PARSE_IFNDEF']
 
 COMMENT_SINGLE_LINE = 0
 COMMENT_MULTI_LINE = 1
 
 inside_comment = False
+inside_if = False
+inside_ifndef = False
+substitute = False
 
 class PARSEOBJECT:
     _passes = count(0)
@@ -96,7 +100,6 @@ class PARSEOBJECT:
             analyzed_line = self.analyzer(l)
             tempfile.append(analyzed_line)
         self.inc_passes()
-        print(tempfile)
         for l in tempfile:
             analyzed_line = self.token_analyzer(l)
             tempfile1.append(analyzed_line)
@@ -107,8 +110,18 @@ class PARSEOBJECT:
         outputfile = os.path.splitext(fn)[0]+'.tokenized'
         self.write_file(outputfile,outfile)
         self.inc_passes()
-        print(tempfile1)
-        self.parsefile = self.parsetokens(tempfile1)
+        tempfile = []
+        for l in tempfile1:
+            analyzed_line = self.parser_analyzer(l)
+            tempfile.append(analyzed_line)
+        for l in tempfile:
+            for w in l:
+                outfile += w+" "
+            outfile += "\n"
+        outputfile = os.path.splitext(fn)[0]+'.parsenized'
+        self.write_file(outputfile,outfile)
+        self.inc_passes()
+        self.parsefile = self.parsetokens(tempfile)
         return self.parsefile
 
     def parseinclude(self, data):
@@ -171,6 +184,53 @@ class PARSEOBJECT:
                         if w.startswith('TOKEN'):
                             continue
             analyzed.append(w)
+        return analyzed
+
+    def parser_analyzer(self, ln):
+        global inside_comment
+        global inside_if
+        global inside_ifndef
+        global substitute
+        analyzed = []
+        subst = []
+        for w in ln:
+            if w == 'TOKEN_CSTART':
+                inside_comment = True
+                if ln[-1] != 'TOKEN_CEND':
+                    analyzed.append('PARSE_MULTILINE_COMMENT')
+                    continue
+                else:
+                    analyzed.append('PARSE_SINGLELINE_COMMENT')
+                    continue
+            if w == 'TOKEN_CMID':
+                analyzed.append('PARSE_MULTILINE_COMMENT')
+                continue
+            if w == 'TOKEN_CEND':
+                inside_comment = False
+                continue
+            if inside_comment == False:
+                if w == '*/':
+                    continue
+            if w == 'TOKEN_IF':
+                inside_if = True
+                analyzed.append('PARSE_IF')
+                continue
+            if inside_if == True:
+                if w == 'TOKEN_NOT_DEFINED':
+                    substitute = True
+                    inside_if = False
+                    inside_ifndef = True
+                    subst.append('PARSE_IFNDEF')
+                    continue
+                else:
+                    analyzed.append(w)
+                    continue
+            if substitute == True:
+                subst.append(w)
+                continue
+            else:
+                analyzed.append(w)
+                continue
         return analyzed
 
     def parsetokens(self, fl):
