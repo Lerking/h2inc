@@ -85,7 +85,7 @@ class H2INC:
         for lines in fh:
             self.tupfile.append(lines)
         fh.close()
-        resultfile = parse.parseheader(self.tupfile)
+        resultfile = parse.parseheader(self.tupfile, inputfile)
         print(resultfile)
         for l in resultfile:
             for w in l:
@@ -93,8 +93,8 @@ class H2INC:
             outfile += "\n"
         outputfile = os.path.splitext(inputfile)[0]+'.inc'
         outputfile = str(outputfile).replace(self.sourcedir, self.destdir)
-        print(outputfile)
-        print(os.path.dirname(outputfile))
+        #print(outputfile)
+        #print(os.path.dirname(outputfile))
         self.write_file(outputfile,outfile)
         
     def write_file(self, fn, data):

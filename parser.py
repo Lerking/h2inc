@@ -2,17 +2,18 @@
 Contains class PARSER
 '''
 from itertools import count
+import os
 
 #Element type definitions. Used in the parse process.
 ELEMENT_TYPE_PREPROCESS = 1
 ELEMENT_TYPE_REGULAR = 2
 
 TOKENS = ['TOKEN_CSTART','TOKEN_CMID','TOKEN_CEND','TOKEN_RPAREN',
-        'TOKEN_LPAREN','TOKEN_ENDLINE','TOKEN_RETVAL','TOKEN_PREPROCESS',
+        'TOKEN_LPAREN','TOKEN_ENDLINE','TOKEN_RETVAL','TOKEN_TYPEDEF',
         'TOKEN_ID','TOKEN_PLUS','TOKEN_MINUS','TOKEN_DIV','TOKEN_MULT',
         'TOKEN_ASSIGN','TOKEN_EQUAL','TOKEN_LBRACE','TOKEN_RBRACE',
         'TOKEN_COMMA','TOKEN_SEMICOLON','TOKEN_LANGLE','TOKEN_RANGLE',
-        'TOKEN_POINTER', 'TOKEN_STRUCT']
+        'TOKEN_POINTER', 'TOKEN_STRUCT','TOKEN_ENUM']
 
 RESERVED = {'auto'  : 'AUTO','break' : 'BREAK','case' : 'CASE','char' : 'CHAR',
         'const' : 'CONST','continue' : 'CONTINUE','default' : 'DEFAULT','do' : 'DO',
@@ -23,16 +24,23 @@ RESERVED = {'auto'  : 'AUTO','break' : 'BREAK','case' : 'CASE','char' : 'CHAR',
         'double' : 'DOUBLE','else' : 'ELSE','enum' : 'ENUM','extern' : 'EXTERN',
         'float' : 'FLOAT','for' : 'FOR','goto' : 'GOTO','if' : 'IF'}
 
-PREPROCESSOR_DIRECTIVES = {'#include' : 'TOKEN_PREPROCESS','#define' : 'TOKEN_PREPROCESS','#undef' : 'TOKEN_PREPROCESS',
-        '#if' : 'TOKEN_PREPROCESS','#ifdef' : 'TOKEN_PREPROCESS','#ifndef' : 'TOKEN_PREPROCESS','#error' : 'TOKEN_PREPROCESS',
-        '__FILE__' : 'TOKEN_PREPROCESS','__LINE__' : 'TOKEN_PREPROCESS','__DATE__' : 'TOKEN_PREPROCESS',
-        '__TIME__' : 'TOKEN_PREPROCESS','__TIMESTAMP__' : 'TOKEN_PREPROCESS','pragma' : 'TOKEN_PREPROCESS',
-        '#' : 'TOKEN_PREPROCESS','##' : 'TOKEN_PREPROCESS','#endif' : 'TOKEN_PREPROCESS'}
+PREPROCESSOR_DIRECTIVES = {'#include' : 'TOKEN_INCLUDE','#define' : 'TOKEN_DEFINE','#undef' : 'TOKEN_UNDEFINE',
+        '#if' : 'TOKEN_IF','#ifdef' : 'TOKEN_IFDEF','#ifndef' : 'TOKEN_IFNDEF','#error' : 'TOKEN_ERROR',
+        '__FILE__' : 'TOKEN_BASE_FILE','__LINE__' : 'TOKEN_BASE_LINE','__DATE__' : 'TOKEN_BASE_DATE',
+        '__TIME__' : 'TOKEN_BASE_TIME','__TIMESTAMP__' : 'TOKEN_BASE_TIMESTAMP','pragma' : 'TOKEN_PRAGMA',
+        '#' : 'TOKEN_HASH','##' : 'TOKEN_DOUBLEHASH','#endif' : 'TOKEN_ENDIF'}
 
-REGULAR = {'/*' : 'TOKEN_CSTART','*/' : 'TOKEN_CEND', '*' : 'TOKEN_CMID', '=' : 'TOKEN_ASSIGN','==' : 'TOKEN_EQUAL',
-        '{' : 'TOKEN_LBRACE','}' : 'TOKEN_RBRACE','\+' : 'TOKEN_PLUS','-' : 'TOKEN_MINUS',
-        '\*' : 'TOKEN_MULT','/' : 'TOKEN_DIV','\(' : 'TOKEN_LPAREN','\)' : 'TOKEN_RPAREN',
-        ',' : 'TOKEN_COMMA',';' : 'TOKEN_SEMICOLON','\<' : 'TOKEN_LANGLE','\>' : 'TOKEN_RANGLE'}
+REGULAR = {'/*' : 'TOKEN_CSTART','/**' : 'TOKEN_CSTART','*/' : 'TOKEN_CEND', '*' : 'TOKEN_CMID', '=' : 'TOKEN_ASSIGN',
+        '==' : 'TOKEN_EQUAL','{' : 'TOKEN_LBRACE','}' : 'TOKEN_RBRACE','};' : 'TOKEN_ENDBRACE','+' : 'TOKEN_PLUS','-' : 'TOKEN_MINUS',
+        '*' : 'TOKEN_MULT','/' : 'TOKEN_DIV','(' : 'TOKEN_LPAREN',')' : 'TOKEN_RPAREN',',' : 'TOKEN_COMMA',
+        ';' : 'TOKEN_SEMICOLON','<' : 'TOKEN_LANGLE','>' : 'TOKEN_RANGLE','TYPEDEF' : 'TOKEN_TYPEDEF',
+        'typedef' : 'TOKEN_TYPEDEF','enum' : 'TOKEN_ENUM','ENUM' : 'TOKEN_ENUM','struct' : 'TOKEN_STRUCT',
+        'STRUCT' : 'TOKEN_STRUCT','char' : 'TOKEN_CHAR','CHAR' : 'TOKEN_CHAR','const' : 'TOKEN_CONST',
+        'CONST' : 'TOKEN_CONST','int' : 'TOKEN_INT','INT' : 'TOKEN_INT','long' : 'TOKEN_LONG','LONG' : 'TOKEN_LONG',
+        'short' : 'TOKEN_SHORT','SHORT' : 'TOKEN_SHORT','signed' : 'TOKEN_SIGNED','SIGNED' : 'TOKEN_SIGNED',
+        'unsigned' : 'TOKEN_UNSIGNED','UNSIGNED' : 'TOKEN_UNSIGNED','void' : 'TOKEN_VOID','VOID' : 'TOKEN_VOID',
+        'volatile' : 'TOKEN_VOLATILE','VOLATILE' : 'TOKEN_VOLATILE','double' : 'TOKEN_DOUBLE','DOUBLE' : 'TOKEN_DOUBLE',
+        'float' : 'TOKEN_FLOAT','FLOAT' : 'TOKEN_FLOAT', '!defined' : 'TOKEN_NOT_DEFINED', '!DEFINED' : 'TOKEN_NOT_DEFINED'}
 
 NASM_PREPROCESS_DIRECTIVES = {'#include' : '%include','#define' : '%define','#undef' : '%undef',
         '#if' : '%if','#ifdef' : '%ifdef','#ifndef' : '%ifndef','#endif' : '%endif',
@@ -44,10 +52,16 @@ NASM_ENUM = "EQU"
 
 NASM_REGULAR = {'/*' : ';', '*' : ';', '*/' : ''}
 
-TOKENS += RESERVED.values()
+#REGULAR += RESERVED.values()
+
+PARSER_TOKENS = ['PARSE_MULTILINE_COMMENT', 'PARSE_SINGLELINE_COMMENT', 'PARSE_TYPEDEF_ENUM', 'PARSE_TYPEDEF_STRUCT',
+                'PARSE_TYPEDEF_STRUCT_STRUCT', 'PARSE_STRUCT', 'PARSE_TAG_NAME', 'PARSE_STRUCT_MEMBER', 'PARSE_ENDSTRUCT',
+                'PARSE_ALIAS', 'PARSE_FUNCTION_POINTER', 'PARSE_FUNCTION']
 
 COMMENT_SINGLE_LINE = 0
 COMMENT_MULTI_LINE = 1
+
+inside_comment = False
 
 class PARSEOBJECT:
     _passes = count(0)
@@ -73,14 +87,28 @@ class PARSEOBJECT:
     def inc_passes(self):
         self.passes = next(self._passes)
 
-    def parseheader(self, fl):
+    def parseheader(self, fl, fn):
         tempfile = []
+        tempfile1 = []
+        outfile = ''
         self.parse_reset()
         for l in fl:
             analyzed_line = self.analyzer(l)
             tempfile.append(analyzed_line)
         self.inc_passes()
-        self.parsefile = self.parsetokens(tempfile)
+        print(tempfile)
+        for l in tempfile:
+            analyzed_line = self.token_analyzer(l)
+            tempfile1.append(analyzed_line)
+        for l in tempfile1:
+            for w in l:
+                outfile += w+" "
+            outfile += "\n"
+        outputfile = os.path.splitext(fn)[0]+'.tokenized'
+        self.write_file(outputfile,outfile)
+        self.inc_passes()
+        print(tempfile1)
+        self.parsefile = self.parsetokens(tempfile1)
         return self.parsefile
 
     def parseinclude(self, data):
@@ -101,6 +129,12 @@ class PARSEOBJECT:
         if w in REGULAR:
             token = REGULAR.get(w)
             return token
+        if w.startswith('/*'):
+            token = 'TOKEN_CSTART'
+            return token
+        if w.endswith('*/'):
+            token = 'TOKEN_CEND'
+            return token
         return False
 
     def analyzer(self, ln):
@@ -115,6 +149,29 @@ class PARSEOBJECT:
                 analysed.append(t)
                 analysed.append(w)
         return analysed
+
+    def token_analyzer(self, ln):
+        global inside_comment
+        analyzed = []
+        for w in ln:
+            if w == 'TOKEN_CSTART':
+                inside_comment = True
+                analyzed.append(w)
+                continue
+            if inside_comment == True:
+                if w == 'TOKEN_MULT':
+                    analyzed.append('TOKEN_CMID')
+                    continue
+                else:
+                    if w == 'TOKEN_CEND':
+                        analyzed.append(w)
+                        inside_comment = False
+                        continue
+                    else:
+                        if w.startswith('TOKEN'):
+                            continue
+            analyzed.append(w)
+        return analyzed
 
     def parsetokens(self, fl):
         templine = []
@@ -244,7 +301,6 @@ class PARSEOBJECT:
                 self.typedef_enum = False
                 continue
             
-
     def parse_comment(self, l):
         templine = []
         for w in l:
@@ -273,6 +329,16 @@ class PARSEOBJECT:
             newline.append(w)
         return newline
                 
+    def write_file(self, fn, data):
+        if not os.path.exists(os.path.dirname(fn)):
+            try:  
+                os.makedirs(os.path.dirname(fn))
+            except OSError as exc: # Guard against race condition
+                if exc.errno != errno.EEXIST:
+                    raise
+        newfile = open(fn, "w")
+        newfile.write(data)
+        newfile.close()
 
 class PARSER(PARSEOBJECT):
     _ids = count(0)

@@ -8,7 +8,7 @@
 ; 
 ; This library is distributed in the hope that it will be useful, 
 ; but WITHOUT ANY WARRANTY; without even the implied warranty of 
-; MERCHANTABILITY or FITNESS A PARTICULAR PURPOSE. See the GNU 
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
 ; Lesser General Public License for more details. 
 ; 
 ; You should have received a copy of the GNU Lesser General Public 
@@ -22,25 +22,11 @@
 ; GTK+ at ftp://ftp.gtk.org/pub/gtk/. 
  
  
-%ifndef __GTK_WINDOW_H__ 
-%define __GTK_WINDOW_H__ 
  
  
-%if !defined (__GTK_H_INSIDE__) && !defined (GTK_COMPILATION) 
-%error "Only "gtk/gtk.inc" can be included directly." 
-%endif 
- 
-%include "gtk/gtkapplication.inc" 
-%include "gtk/gtkaccelgroup.inc" 
-%include "gtk/gtkbin.inc" 
  
  
-%define GTK_TYPE_WINDOW (gtk_window_get_type ()) 
-%define GTK_WINDOW(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), GTK_TYPE_WINDOW, GtkWindow)) 
-%define GTK_WINDOW_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), GTK_TYPE_WINDOW, GtkWindowClass)) 
-%define GTK_IS_WINDOW(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), GTK_TYPE_WINDOW)) 
-%define GTK_IS_WINDOW_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), GTK_TYPE_WINDOW)) 
-%define GTK_WINDOW_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), GTK_TYPE_WINDOW, GtkWindowClass)) 
+ 
  
 struc GtkWindowPrivate 
 endstruc 
@@ -57,6 +43,7 @@ endstruc
  
  
  
+/** 
 ; GtkWindowClass: 
 ; @parent_class: The parent class. 
 ; @set_focus: Sets child as the focus widget for the window. 
@@ -68,14 +55,17 @@ endstruc
 ; keybinding signal. Since: 3.14 
  
  
+/*< public >*/ 
  
  
 ; G_SIGNAL_ACTION signals for keybindings  
  
  
+/*< private >*/ 
  
 ; Padding for future expansion  
  
+/** 
 ; GtkWindowType: 
 ; @GTK_WINDOW_TOPLEVEL: A regular window, such as a dialog. 
 ; @GTK_WINDOW_POPUP: A special window such as a tooltip. 
@@ -97,6 +87,7 @@ endstruc
 GTK_WINDOW_TOPLEVEL	 EQU	 0 
 GTK_WINDOW_POPUP	 EQU	 1 
  
+/** 
 ; GtkWindowPosition: 
 ; @GTK_WIN_POS_NONE: No influence is made on placement. 
 ; @GTK_WIN_POS_CENTER: Windows should be placed in the center of the screen. 
@@ -116,8 +107,6 @@ GTK_WIN_POS_CENTER_ALWAYS	 EQU	 3
 GTK_WIN_POS_CENTER_ON_PARENT	 EQU	 4 
  
  
-const gchar ; gtk_window_get_title (GtkWindow *window); 
-const gchar ; gtk_window_get_role (GtkWindow *window); 
  
  
  
@@ -127,8 +116,6 @@ const gchar ; gtk_window_get_role (GtkWindow *window);
  
  
  
-const gchar ; gtk_window_get_icon_name (GtkWindow *window); 
-const gchar ; gtk_window_get_default_icon_name (void); 
  
  
 ; If window is set modal, input will be grabbed when show and released when hide  
@@ -156,4 +143,4 @@ const gchar ; gtk_window_get_default_icon_name (void);
  
  
  
-#endif ; __GTK_WINDOW_H__  
+TOKEN_ENDIF #endif ; __GTK_WINDOW_H__  
