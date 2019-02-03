@@ -237,16 +237,17 @@ class PARSEOBJECT:
                     analysed.append(t)
                     analysed.append(w)
                     continue
-            if t == ('TOKEN_LBRACE'):
+            if t == 'TOKEN_LBRACE':
                 inside_braces = True
                 analysed.append(w)
                 continue
-            if w == '};' and inside_struct == True:
+            if t == 'TOKEN_RBRACE' and inside_struct == True:
                 inside_braces = False
                 inside_struct = False
+                analysed.append(t)
                 analysed.append(w)
                 continue
-            elif inside_braces == True and inside_struct == True:
+            if inside_braces == True and inside_struct == True:
                 if inside_member == True:
                     inside_member = False
                     analysed.append(w)
@@ -257,13 +258,6 @@ class PARSEOBJECT:
                     analysed.append(t)
                     analysed.append(w)
                     continue
-            if t == 'TOKEN_RBRACE' and inside_braces == True:
-                inside_braces = False
-                if inside_struct == True:
-                    inside_struct = False
-                analysed.append(t)
-                analysed.append(w)
-                continue
             if t == False:
                 analysed.append(w)
                 continue
@@ -271,6 +265,7 @@ class PARSEOBJECT:
                 analysed.append(t)
                 analysed.append(w)
         inside_include = False
+        inside_struct = False
         return analysed
 
     def token_analyzer(self, ln):

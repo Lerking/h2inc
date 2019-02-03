@@ -52,10 +52,10 @@ TOKEN_TYPEDEF_STRUCT typedef struct _GtkWindowGroupPrivate GtkWindowGroupPrivate
 
 TOKEN_STRUCT struct _GtkWindow 
 { 
-TOKEN_MEMBER GtkBin bin; 
+GtkBin TOKEN_FUNCTION bin; 
 
-TOKEN_MEMBER GtkWindowPrivate *priv; 
-}; 
+GtkWindowPrivate TOKEN_FUNCTION *priv; 
+TOKEN_ENDBRACE }; 
 
 TOKEN_CSTART /** 
 TOKEN_CMID * GtkWindowClass: 
@@ -68,30 +68,30 @@ TOKEN_CMID * mnemonics that are associated with window changes.
 TOKEN_CMID * @enable_debugging: Class handler for the #GtkWindow::enable-debugging 
 TOKEN_CMID * keybinding signal. Since: 3.14 
 TOKEN_CEND */ 
-TOKEN_STRUCT struct _GtkWindowClass 
+TOKEN_STRUCT struct TOKEN_MEMBER _GtkWindowClass 
 { 
-TOKEN_MEMBER GtkBinClass parent_class; 
+GtkBinClass TOKEN_FUNCTION parent_class; 
 
-TOKEN_MEMBER /*< public TOKEN_MEMBER >*/ 
+TOKEN_CSTART /*< public TOKEN_CEND >*/ 
 
-void TOKEN_MEMBER (* set_focus) TOKEN_MEMBER (GtkWindow *window, 
-TOKEN_MEMBER GtkWidget *focus); 
+TOKEN_VOID void TOKEN_FUNCTION_POINTER (* TOKEN_FUNCTION set_focus) (GtkWindow TOKEN_FUNCTION *window, 
+GtkWidget TOKEN_FUNCTION *focus); 
 
-TOKEN_MEMBER /* G_SIGNAL_ACTION TOKEN_MEMBER signals for TOKEN_MEMBER keybindings */ 
+TOKEN_CSTART /* G_SIGNAL_ACTION signals for keybindings TOKEN_CEND */ 
 
-TOKEN_MEMBER void (* TOKEN_MEMBER activate_focus) (GtkWindow TOKEN_MEMBER *window); 
-void TOKEN_MEMBER (* activate_default) TOKEN_MEMBER (GtkWindow *window); 
-TOKEN_MEMBER void (* TOKEN_MEMBER keys_changed) (GtkWindow TOKEN_MEMBER *window); 
-gboolean TOKEN_MEMBER (* enable_debugging) TOKEN_MEMBER (GtkWindow *window, 
-TOKEN_MEMBER gboolean toggle); 
+TOKEN_VOID void TOKEN_FUNCTION_POINTER (* TOKEN_FUNCTION activate_focus) (GtkWindow TOKEN_FUNCTION *window); 
+TOKEN_VOID void TOKEN_FUNCTION_POINTER (* TOKEN_FUNCTION activate_default) (GtkWindow TOKEN_FUNCTION *window); 
+TOKEN_VOID void TOKEN_FUNCTION_POINTER (* TOKEN_FUNCTION keys_changed) (GtkWindow TOKEN_FUNCTION *window); 
+TOKEN_FUNCTION gboolean TOKEN_FUNCTION_POINTER (* TOKEN_FUNCTION enable_debugging) (GtkWindow TOKEN_FUNCTION *window, 
+TOKEN_FUNCTION gboolean TOKEN_FUNCTION toggle); 
 
-TOKEN_MEMBER /*< private TOKEN_MEMBER >*/ 
+TOKEN_CSTART /*< private TOKEN_CEND >*/ 
 
-/* TOKEN_MEMBER Padding for TOKEN_MEMBER future expansion TOKEN_MEMBER */ 
-void TOKEN_MEMBER (*_gtk_reserved1) (void); 
-TOKEN_MEMBER void (*_gtk_reserved2) TOKEN_MEMBER (void); 
-void TOKEN_MEMBER (*_gtk_reserved3) (void); 
-}; 
+TOKEN_CSTART /* Padding for future expansion TOKEN_CEND */ 
+TOKEN_VOID void TOKEN_FUNCTION_POINTER (*_gtk_reserved1) TOKEN_FUNCTION (void); 
+TOKEN_VOID void TOKEN_FUNCTION_POINTER (*_gtk_reserved2) TOKEN_FUNCTION (void); 
+TOKEN_VOID void TOKEN_FUNCTION_POINTER (*_gtk_reserved3) TOKEN_FUNCTION (void); 
+TOKEN_ENDBRACE }; 
 
 TOKEN_CSTART /** 
 TOKEN_CMID * GtkWindowType: 
