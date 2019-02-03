@@ -13,7 +13,9 @@ TOKENS = ['TOKEN_CSTART','TOKEN_CMID','TOKEN_CEND','TOKEN_RPAREN',
         'TOKEN_IF','TOKEN_PLUS','TOKEN_MINUS','TOKEN_DIV','TOKEN_MULT',
         'TOKEN_ASSIGN','TOKEN_EQUAL','TOKEN_LBRACE','TOKEN_RBRACE',
         'TOKEN_COMMA','TOKEN_SEMICOLON','TOKEN_LANGLE','TOKEN_RANGLE',
-        'TOKEN_POINTER', 'TOKEN_STRUCT','TOKEN_ENUM']
+        'TOKEN_POINTER', 'TOKEN_STRUCT','TOKEN_ENUM','TOKEN_MACRO',
+        'TOKEN_FUNCTION','TOKEN_TYPEDEF_ENUM','TOKEN_TYPEDEF_STRUCT',
+        'TOKEN_TYPEDEF_STRUCT_STRUCT']
 
 RESERVED = {'auto'  : 'AUTO','break' : 'BREAK','case' : 'CASE','char' : 'CHAR',
         'const' : 'CONST','continue' : 'CONTINUE','default' : 'DEFAULT','do' : 'DO',
@@ -62,6 +64,15 @@ PARSER_TOKENS = ['PARSE_MULTILINE_COMMENT', 'PARSE_SINGLELINE_COMMENT', 'PARSE_T
 COMMENT_SINGLE_LINE = 0
 COMMENT_MULTI_LINE = 1
 
+inside_member = False
+inside_braces = False
+inside_typedef_struct_struct = False
+inside_typedef_struct = False
+inside_typedef_enum = False
+inside_typedef = False
+inside_struct = False
+inside_include = False
+inside_string = False
 inside_comment = False
 inside_if = False
 inside_ifndef = False
@@ -135,6 +146,10 @@ class PARSEOBJECT:
         return tempstr
 
     def tokenizer(self, w):
+        global inside_comment
+        global inside_string
+        global inside_include
+        global inside_struct
         token = ""
         if w in PREPROCESSOR_DIRECTIVES:
             token = PREPROCESSOR_DIRECTIVES.get(w)
@@ -143,24 +158,119 @@ class PARSEOBJECT:
             token = REGULAR.get(w)
             return token
         if w.startswith('/*'):
+            inside_comment = True
             token = 'TOKEN_CSTART'
             return token
-        if w.endswith('*/'):
-            token = 'TOKEN_CEND'
-            return token
+        if inside_comment == True:
+            if w.endswith('*/'):
+                inside_comment = False
+                token = 'TOKEN_CEND'
+                return token
+        if w.startswith('"'):
+            inside_string = True
+            return False
+        if w.endswith('"'):
+            inside_string = False
+            return False
+        if w.isupper():
+            if inside_string == True:
+                return False
+            else:
+                token = 'TOKEN_MACRO'
+                return token
+        if w.islower():
+            if inside_string == True or inside_include == True or inside_struct == True:
+                return False
+            else:
+                if w.startswith('(*'):
+                    token = 'TOKEN_FUNCTION_POINTER'
+                    return token
+                else:
+                    token = 'TOKEN_FUNCTION'
+                    return token
         return False
 
     def analyzer(self, ln):
+        global inside_include
+        global inside_typedef
+        global inside_typedef_enum
+        global inside_typedef_struct
+        global inside_typedef_struct_struct
+        global inside_braces
+        global inside_struct
+        global inside_member
         analysed = []
         word = [w for w in ln.split()]
         for w in word:
             t = self.tokenizer(w)
+            if t == 'TOKEN_INCLUDE':
+                inside_include = True
+            if t == 'TOKEN_TYPEDEF':
+                inside_typedef = True
+            if t == 'TOKEN_ENUM' and inside_typedef == True:
+                inside_typedef_enum = True
+                inside_typedef = False
+                analysed.pop(0)
+                analysed.insert(0,'TOKEN_TYPEDEF_ENUM')
+                analysed.append(w)
+                continue
+            if t == 'TOKEN_STRUCT':
+                if inside_typedef == True:
+                    if ln.endswith(';\n'):
+                        inside_typedef_struct = True
+                        inside_typedef = False
+                        analysed.pop(0)
+                        analysed.insert(0,'TOKEN_TYPEDEF_STRUCT')
+                        analysed.append(w)
+                        continue
+                    else:
+                        inside_typedef_struct_struct = True
+                        inside_typedef_struct = False
+                        inside_typedef = False
+                        analysed.pop(0)
+                        analysed.insert(0,'TOKEN_TYPEDEF_STRUCT_STRUCT')
+                        analysed.append(w)
+                        inside_typedef_struct_struct = False #### THIS needs to be further refined!
+                        continue
+                else:
+                    inside_struct = True
+                    analysed.append(t)
+                    analysed.append(w)
+                    continue
+            if t == ('TOKEN_LBRACE'):
+                inside_braces = True
+                analysed.append(w)
+                continue
+            if w == '};' and inside_struct == True:
+                inside_braces = False
+                inside_struct = False
+                analysed.append(w)
+                continue
+            elif inside_braces == True and inside_struct == True:
+                if inside_member == True:
+                    inside_member = False
+                    analysed.append(w)
+                    continue
+                else:
+                    t = 'TOKEN_MEMBER'
+                    inside_member = True
+                    analysed.append(t)
+                    analysed.append(w)
+                    continue
+            if t == 'TOKEN_RBRACE' and inside_braces == True:
+                inside_braces = False
+                if inside_struct == True:
+                    inside_struct = False
+                analysed.append(t)
+                analysed.append(w)
+                continue
             if t == False:
                 analysed.append(w)
                 continue
             else:
                 analysed.append(t)
                 analysed.append(w)
+        inside_include = False
         return analysed
 
     def token_analyzer(self, ln):
