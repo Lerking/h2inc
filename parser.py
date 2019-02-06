@@ -3,6 +3,7 @@ Contains class PARSER
 '''
 from itertools import count
 import os
+from tokenizer import TOKENIZER
 
 #Element type definitions. Used in the parse process.
 ELEMENT_TYPE_PREPROCESS = 1
@@ -82,6 +83,7 @@ class PARSEOBJECT:
     _passes = count(0)
     
     def __init__(self):
+        self.tokenize = TOKENIZER()
         self.parseline = []
         self.parsefile = []
         self.passes = 0
