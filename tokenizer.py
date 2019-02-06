@@ -16,33 +16,47 @@ class TOKENIZEOBJECT:
         self.analyzeline = []
         self.analyzed = []
 
-    class Decorators(ContextDecorator):
-        @classmethod
-        def typedef_struct(ContextDecorator):
+    class typedef_struct(ContextDecorator):
+        def __enter__(self):
             TOKENIZER._analyzed.append('TOKEN_TYPEDEF_STRUCT')
-            return
+            return self
 
-        @classmethod
-        def typedef_enum(ContextDecorator):
+        def __exit__(self, *exc):
+            return False
+        
+    class typedef_enum(ContextDecorator):
+        def __enter__(self):
             TOKENIZER._analyzed.append('TOKEN_TYPEDEF_ENUM')
-            return
+            return self
 
-        @classmethod
-        def enum(ContextDecorator):
+        def __exit__(self, *exc):
+            return False
+
+    class enum(ContextDecorator):
+        def __enter__(self):
             TOKENIZER._analyzed.append('TOKEN_ENUM')
-            return
+            return self
 
-        @classmethod
-        def tagname(ContextDecorator):
+        def __exit__(self, *exc):
+            return False
+
+    class tagname(ContextDecorator):
+        def __enter__(self):
             TOKENIZER._analyzed.append('TOKEN_TAG_NAME')
-            return
+            return self
 
-        @classmethod
-        def alias(ContextDecorator):
+        def __exit__(self, *exc):
+            return False
+
+    class alias(ContextDecorator):
+        def __enter__(self):
             TOKENIZER._analyzed.append('TOKEN_ALIAS')
-            return
+            return self
+
+        def __exit__(self, *exc):
+            return False
             
-    @Decorators.typedef_struct
+    @typedef_struct()
     def TD_struct(self, tsl):
         '''
         Takes a Typedef Struct 'list' and appends all items (i) in that list to _analyzed.
@@ -51,7 +65,15 @@ class TOKENIZEOBJECT:
             self._analyzed.append(i)
         return
 
-    @Decorators.tagname
+    @typedef_enum()
+    def TD_enum(self, e):
+        '''
+        Takes a Typedef enum member and appends it to _analyzed.
+        '''
+        self._analyzed.append(e)
+        return
+
+    @tagname()
     def TD_tagname(self, tn):
         '''
         Takes a Typedef tagname and appends it to _analyzed.
