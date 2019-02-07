@@ -4,6 +4,7 @@ Contains class PARSER
 from itertools import count
 import os
 from tokenizer import TOKENIZER
+from lineanalyzer import ANALYZER
 
 #Element type definitions. Used in the parse process.
 ELEMENT_TYPE_PREPROCESS = 1
@@ -81,7 +82,8 @@ substitute = False
 
 class PARSEOBJECT:
     _passes = count(0)
-    
+    _lineanalyzer = ANALYZER()
+
     def __init__(self):
         self.tokenize = TOKENIZER()
         self.parseline = []
@@ -107,11 +109,20 @@ class PARSEOBJECT:
     def parseheader(self, fl, fn):
         tempfile = []
         tempfile1 = []
+        templine = []
         outfile = ''
+        rr = 'next'
+        count = 0
         self.parse_reset()
-        for l in fl:
-            analyzed_line = self.analyzer(l)
-            tempfile.append(analyzed_line)
+        i = iter(fl)
+        while i:
+            rr = self._lineanalyzer.analyze(next(i))
+            if rr == 'next':
+                count += 1
+            else:
+                templine.append(rr)
+                tempfile.append(templine)
+                count += 1
         self.inc_passes()
         for l in tempfile:
             analyzed_line = self.token_analyzer(l)
