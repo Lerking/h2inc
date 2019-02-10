@@ -123,6 +123,7 @@ class PARSEOBJECT:
                 templine.append(rr)
                 tempfile.append(templine)
                 count += 1
+                templine = []
         self.inc_passes()
         for l in tempfile:
             analyzed_line = self.token_analyzer(l)
