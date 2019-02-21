@@ -17,7 +17,8 @@ TOKENS = ['TOKEN_CSTART','TOKEN_CMID','TOKEN_CEND','TOKEN_RPAREN',
         'TOKEN_COMMA','TOKEN_SEMICOLON','TOKEN_LANGLE','TOKEN_RANGLE',
         'TOKEN_POINTER', 'TOKEN_STRUCT','TOKEN_ENUM','TOKEN_MACRO',
         'TOKEN_FUNCTION','TOKEN_TYPEDEF_ENUM','TOKEN_TYPEDEF_STRUCT',
-        'TOKEN_TYPEDEF_STRUCT_STRUCT']
+        'TOKEN_TYPEDEF_STRUCT_STRUCT','TOKEN_TAG_NAME','TOKEN_ALIAS',
+        'TOKEN_ENUM']
 
 RESERVED = {'auto'  : 'AUTO','break' : 'BREAK','case' : 'CASE','char' : 'CHAR',
         'const' : 'CONST','continue' : 'CONTINUE','default' : 'DEFAULT','do' : 'DO',
@@ -116,7 +117,11 @@ class PARSEOBJECT:
         self.parse_reset()
         i = iter(fl)
         while i:
-            rr = self._lineanalyzer.analyze(next(i))
+            try:
+                rr = self._lineanalyzer.analyze(next(i))
+            except StopIteration:
+                i = False
+                continue
             if rr == 'next':
                 count += 1
             else:
