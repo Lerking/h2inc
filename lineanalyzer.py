@@ -17,14 +17,15 @@ class ANALYZEOBJECT:
         self.comment = False
         self.typedef = False
         self.members = False
+        self.ts = ''
 
     def analyze(self,l):
+        if l == '' or l == '\n':
+            return l
         if self.typedef == True:
             rv = self.analyze_typedef(l)
             if rv != False:
                 return rv
-        if l == '' or l == '\n':
-            return l
         rv = self.analyze_comment(l)
         if rv != False:
             return rv
@@ -60,25 +61,32 @@ class ANALYZEOBJECT:
         return False
 
     def analyze_typedef(self,l):
-        ts = ''
-        ts += l
+        if self.typedef == False:
+            self.ts = ''
+        self.ts += l
         s = l.split()
         w = [w for w in s]
         if w[0] == 'typedef':
             if w[1] == 'struct':
                 if w[-1].endswith(';'):
                     self.typedef = False
-                    return ts
+                    return self.ts
                 else:
                     self.typedef = True
                     return 'next'
             if w[1] == 'enum':
                 if w[-1].endswith(';'):
                     self.typedef = False
-                    return ts
+                    return self.ts
                 else:
                     self.typedef = True
                     return 'next'
+        if self.typedef == True:
+            if w[0].startswith('{'):
+                return self.ts
+            if w[0].startswith('}'):
+                self.typedef = False
+                return self.ts
         return False
 
     def analyze_struct(self,l):
@@ -108,6 +116,7 @@ class ANALYZER(ANALYZEOBJECT):
     _passes = count(0)
 
     def __init__(self):
+        ANALYZEOBJECT.__init__(self)
         self.id = next(self._ids)
         self.tupline = []
         self.tupfile = []
