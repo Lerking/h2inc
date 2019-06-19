@@ -1,3 +1,4 @@
 * linguist-vendored
-*.h linguist-vendored
-*.inc linguist-vendored
+*.h linguist-detectable=false
+*.inc linguist-detectable=true
+*.py linguist-detectable=true
