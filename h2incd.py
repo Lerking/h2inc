@@ -5,13 +5,21 @@ from watchdog.events import FileSystemEventHandler
 
 class h2incDaemon(Daemon):
 	def run(self):
-		while True:
-			time.sleep(1)
+		event_handler = MyHandler()
+		observer = Observer()
+		observer.schedule(event_handler, path='/usr/include', recursive=False)
+		observer.start()
+		try:
+			while True:
+				time.sleep(1)
+		except KeyboardInterrupt:
+			observer.stop()
+		observer.join()
 
 class MyHandler(FileSystemEventHandler):
     def on_modified(self, event):
         print(f'event type: {event.event_type}  path : {event.src_path}')
-		
+
 if __name__ == "__main__":
 	daemon = h2incDaemon('/tmp/h2inc-daemon.pid')
 	if len(sys.argv) == 2:

@@ -1,8 +1,6 @@
 """Generic linux daemon base class for python 3.x."""
 
 import sys, os, time, atexit, signal
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
 
 class Daemon:
 	"""A generic daemon class.
@@ -56,11 +54,6 @@ class Daemon:
 		pid = str(os.getpid())
 		with open(self.pidfile,'w+') as f:
 			f.write(pid + '\n')
-		
-		event_handler = MyHandler()
-		observer = Observer()
-		observer.schedule(event_handler, path='/usr/include', recursive=False)
-		observer.start()
 	
 	def delpid(self):
 		os.remove(self.pidfile)
