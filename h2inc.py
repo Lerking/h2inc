@@ -10,7 +10,7 @@ class H2INC:
         self.filelist = []
         self.folderlist = []
         self.sourcedir = "/usr/include"
-        self.destdir = "/data/include"
+        self.destdir = "~/data/include"
         self.filecnt = 0
         self.foldercnt = 0
         
@@ -93,8 +93,8 @@ class H2INC:
             outfile += "\n"
         outputfile = os.path.splitext(inputfile)[0]+'.inc'
         outputfile = str(outputfile).replace(self.sourcedir, self.destdir)
-        #print(outputfile)
-        #print(os.path.dirname(outputfile))
+        print(outputfile)
+        print(os.path.dirname(outputfile))
         self.write_file(outputfile,outfile)
         
     def write_file(self, fn, data):
@@ -115,5 +115,5 @@ if __name__ == "__main__":
         print(app.filecnt)
         if app.srcfoldercnt(app.sourcedir) == True:
             print(app.foldercnt)
-        app.read_file("./gtkwindow.h") #testfile for comments and header includes
-        #app.process_directory()
+        #app.read_file("./gtkwindow.h") #testfile for comments and header includes
+        app.process_directory()
